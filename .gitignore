@@ -1,3 +1,11 @@
+# Custom Folders
+Ex0/out/
+Ex1/out/
+Ex2/out/
+Ex3/out/
+Ex4/out/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
