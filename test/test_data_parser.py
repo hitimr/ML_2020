@@ -16,9 +16,6 @@ def test_parse_companies():
     for i in range(MIN_COMPANY_YEAR, MAX_COMPANY_YEAR+1):
         df_list1.append(parse_companies(i))
 
-
-
-
     df_list2 = parse_companies()
 
     assert len(df_list1) == 5
@@ -28,6 +25,16 @@ def test_parse_companies():
         assert df_list1[i].size == df_list2[i].size
 
 
+def test_parse_breastCancer():
+    parse_breastCancer("lrn")
+    parse_breastCancer("sol")
+    parse_breastCancer("tes")
+
+    with pytest.raises(Exception):
+        parse_breastCancer()
+
+    with pytest.raises(Exception):
+        parse_breastCancer("Gay")
 
 
 if __name__ == "__main__":

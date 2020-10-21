@@ -2,9 +2,15 @@ import os
 
 WORKSPACE_DIR = os.path.dirname(os.path.abspath(__file__))
 COMPANY_DATA_DIR = WORKSPACE_DIR + "\\datasets\\companies"
+BREASTCANCER_DATA_DIR = WORKSPACE_DIR + "\\datasets\\breast_cancer"
 
 
 
 
 MIN_COMPANY_YEAR = 1
 MAX_COMPANY_YEAR = 5
+
+
+BREASTCANCER_LRN_SIZE = 9120
+BREASTCANCER_SOL_SIZE = 568
+BREASTCANCER_TES_SIZE = 8804
