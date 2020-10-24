@@ -63,5 +63,5 @@ def parse_breastCancer(data_set):
 
 
 if __name__ == "__main__":
-    df = parse_breastCancer("tes")
+    df = parse_breastCancer("lrn")
     print()
