@@ -59,9 +59,59 @@ def parse_breastCancer(data_set):
 
     raise ValueError("Improper argument. Allowed arguments are lrn, sol, test")
 
+def parse_amazon(data_set):
+        
+    """imports the amazon review dataset. depending on the data_set. learn-
+    (lrn), solution- (sol) or test-set (tes) are returned
 
+    Raises: ValueError: invalid argument
+
+    Returns: dataframe: pandas dataframe containing the requested dataset
+    """    
+    if data_set == "lrn":
+        df = pd.read_csv(AMAZON_DATA_DIR + "\\amazon_review_ID.shuf.lrn.csv")
+        assert df.size == AMAZON_LRN_SIZE
+        return df
+
+    if data_set == "sol":
+        df = pd.read_csv(AMAZON_DATA_DIR + "\\amazon_review_ID.shuf.sol.ex.csv")
+        assert df.size == AMAZON_SOL_SIZE
+        return df
+    
+    if data_set == "tes":
+        df = pd.read_csv(AMAZON_DATA_DIR + "\\amazon_review_ID.shuf.tes.csv")
+        assert df.size == AMAZON_TES_SIZE
+        return df
+
+    raise ValueError("Improper argument. Allowed arguments are lrn, sol, test")
+
+
+def parse_congressional_voting(data_set):        
+    """imports the congressional voting dataset. depending on the data_set. train-
+    (train), test- (test) or sampleSubmission-set (sampleSubmission) are returned
+
+    Raises: ValueError: invalid argument
+
+    Returns: dataframe: pandas dataframe containing the requested dataset
+    """    
+    if data_set == "sampleSubmission":
+        df = pd.read_csv(CONGRESSIONAL_VOTING_DIR + "\\CongressionalVotingID.shuf.sampleSubmission.csv")
+        assert df.size == CONGRESSIONALVOTING_SAMPLE_SIZE
+        return df
+
+    if data_set == "test":
+        df = pd.read_csv(CONGRESSIONAL_VOTING_DIR + "\\CongressionalVotingID.shuf.test.csv")
+        assert df.size == CONGRESSIONALVOTING_TEST_SIZE
+        return df
+    
+    if data_set == "train":
+        df = pd.read_csv(CONGRESSIONAL_VOTING_DIR + "\\CongressionalVotingID.shuf.train.csv")
+        assert df.size == CONGRESSIONALVOTING_TRAIN_SIZE
+        return df
+
+    raise ValueError("Improper argument. Allowed arguments are lrn, sol, test")
 
 
 if __name__ == "__main__":
-    df = parse_breastCancer("lrn")
-    print()
+    df = parse_congressional_voting("train")
+    print(df.size)

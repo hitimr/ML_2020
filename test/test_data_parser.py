@@ -37,6 +37,29 @@ def test_parse_breastCancer():
         parse_breastCancer("Gay")
 
 
+def test_parse_amazon():
+    parse_amazon("lrn")
+    parse_amazon("sol")
+    parse_amazon("tes")
+
+    with pytest.raises(Exception):
+        parse_amazon()
+
+    with pytest.raises(Exception):
+        parse_amazon("42")
+
+
+def test_parse_congressional_voting():
+    parse_congressional_voting("sampleSubmission")
+    parse_congressional_voting("test")
+    parse_congressional_voting("train")
+
+    with pytest.raises(Exception):
+        parse_congressional_voting()
+
+    with pytest.raises(Exception):
+        parse_congressional_voting("Anal")
+
 if __name__ == "__main__":
     test_parse_companies()
 
