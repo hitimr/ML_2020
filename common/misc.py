@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 def compare_df(df_a, df_b, col_name):
@@ -15,9 +16,11 @@ def compare_df(df_a, df_b, col_name):
             True     % of identical entries
             False    % of nonidentical entries
             Name: different, dtype: float64
-    """    
-    differences = pd.DataFrame()
-    differences["different"] = df_a[col_name].eq(df_b[col_name])
-    return differences["different"].value_counts(True)
+    """
+    assert df_a.shape[0] == df_b.shape[0] # row count must be equal
+
+    size = df_a.shape[0]
+    identical_cnt = np.sum(df_a[col_name].to_numpy() == df_b[col_name].to_numpy())
+    return identical_cnt / float(size), (size - identical_cnt) / float(size)
 
 
