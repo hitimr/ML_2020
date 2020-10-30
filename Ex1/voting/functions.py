@@ -11,6 +11,7 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from sklearn.pipeline import make_pipeline
+from sklearn.metrics import mean_squared_error, accuracy_score, confusion_matrix
 
 
 from sklearn.preprocessing import StandardScaler,PowerTransformer,MinMaxScaler,QuantileTransformer,normalize
@@ -24,7 +25,7 @@ def MLP_Search(alphas,modes,solv, h,maxiter,X_train, X_valid, Y_train, Y_valid,s
                 for k in solv:
                     for l in scaler:
                         X_train, X_valid = DefinScaler(l, X_train, X_valid)
-                        clf = MLPClassifier(hidden_layer_sizes=(g), max_iter=maxiter, alpha=i,solver=k,activation=j,tol = 1e-9)
+                        clf = MLPClassifier(hidden_layer_sizes=(g,g,g,g), max_iter=maxiter, alpha=i,solver=k,activation=j,tol = 1e-9)
                         clf.fit(X_train, Y_train)
                         Y_pred = clf.predict(X_valid)
                         print("Hidden layers: ",g,"|\talpha: ",i,"|\tmode: ",j,"|\tsolver: ",k,"|\tscore: ",accuracy_score(Y_valid, Y_pred),"|\tscaler: ",l)
@@ -84,3 +85,49 @@ def KBest(features, target):
     cols = selector.fit(features.values, target.values).get_support(indices=True)
     selected_feats = features.iloc[:,cols]
     return selected_feats
+
+def plot_corr_heatmap(df, fmt=".2f", feat_to_ret="Class", ticksfont=12):
+    plt.rcParams.update({'font.size': 14, 'font.weight': 'bold'})
+    # Compute correlations and save in matrix
+    corr = np.abs(df.corr()) # We only used absolute values for visualization purposes! ..."hot-cold" view to just sort between 
+    # Mask the repeated values --> here: upper triangle
+
+    #print(corr)
+    mask = np.zeros_like(corr, dtype=np.bool)
+    mask[np.triu_indices_from(mask)] = True # mask upper triangle
+
+    corr_to_feat = corr.loc[:,feat_to_ret]
+    
+    f, ax = plt.subplots(figsize=(18, 16))
+    sns.heatmap(corr, annot=True, fmt=fmt , mask=mask, vmin=0, vmax=1, linewidths=.5,cmap="YlGnBu")
+    plt.tick_params(labelsize=ticksfont)
+    return corr_to_feat
+
+def Red_corr_list(corr_to_class_stripped,k):
+    corr_list = corr_to_class_stripped.index
+    red_corr_list = []
+    for i in corr_list:
+        if corr_to_class_stripped[i] <= k:
+            red_corr_list.append(i)
+    return red_corr_list
+
+def Statistic(Y_valid,Y_pred,name):
+    print("Heat map: ")
+    plt.figure()
+    cm = confusion_matrix(Y_valid.Class, Y_pred)
+    sns.heatmap(cm, center=True)
+    plt.savefig("Heatmap {}".format(name))
+    plt.figure()
+    sns.distplot(Y_valid.Class)
+    sns.distplot(Y_pred, color="red")
+    plt.savefig("difference between prediction and validation {}".format(name))
+
+    plt.figure()
+    sns.distplot(Y_valid.Class-Y_pred)
+    plt.savefig("total difference between prediction and validation {}".format(name))
+    print(sqrt(mean_squared_error(Y_valid.Class, Y_pred)))
+
+    Y_pred_Norm = Y_pred / np.linalg.norm(Y_pred)
+    Y_valid_Norm = Y_valid / np.linalg.norm(Y_valid.Class)
+
+    print(sqrt(mean_squared_error(Y_pred_Norm, Y_valid_Norm)))
