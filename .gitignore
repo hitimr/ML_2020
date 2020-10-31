@@ -1,10 +1,6 @@
 # Custom Folders
-Ex0/out/
-Ex1/out/
-Ex2/out/
-Ex3/out/
-Ex4/out/
-
+*/out/
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
