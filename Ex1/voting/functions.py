@@ -40,7 +40,7 @@ def MLP_Search(alphas,modes,solv, h,maxiter,X_train, X_valid, Y_train, Y_valid,s
     return erg
 
 def DefinScaler(scaler, X_train, X_valid):
-    if scaler == "standart":
+    if scaler == "standard":
         scaler = StandardScaler()  
         scaler.fit(X_train) 
         X_train_SC = scaler.transform(X_train) 
@@ -59,6 +59,23 @@ def DefinScaler(scaler, X_train, X_valid):
   
     return X_train_SC, X_valid_SC
 
+def DefineScaler(X_train, scaler_type):
+    if scaler_type == "standard":
+        scaler = StandardScaler()  
+        scaler.fit(X_train)
+        return scaler
+    if scaler_type == "norm":
+        scaler = NormalizeScaler().fit(X_train, norm='l2')
+        return scaler
+    if scaler_type == "minmax":
+        scaler = MinMaxScaler()
+        scaler.fit_transform(X_train)
+        return scaler
+    if scaler_type == "quantile":
+        scaler = QuantileTransformer(random_state=0)
+        scaler.fit(X_train)
+        return scaler
+
 def FindBestScore(results):
     best_score = 0
     best_index = 0
@@ -69,6 +86,14 @@ def FindBestScore(results):
     print("best_score:", best_score)
     print("best_params:", results[best_index])
     return results[best_index]
+
+def preprocess_rf(df, scaler=None, scaler_type="standard"):
+    ...
+    if not scaler:
+        scaler = DefineScaler(df, scaler_type)
+    df = scaler.fit(df)
+    ...
+
 
 def KBest(features, target):
     #VT = VarianceThreshold(threshold=0.05)
