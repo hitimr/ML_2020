@@ -111,10 +111,16 @@ def KBest(features, target):
     selected_feats = features.iloc[:,cols]
     return selected_feats
 
-def plot_corr_heatmap(df, fmt=".2f", feat_to_ret="Class", ticksfont=12):
+def plot_corr_heatmap(df, fmt=".2f", feat_to_ret="Class", ticksfont=12,abs = True):
+    df = df.replace("republican",100)
+    df = df.replace("democrat",1)
     plt.rcParams.update({'font.size': 14, 'font.weight': 'bold'})
     # Compute correlations and save in matrix
-    corr = np.abs(df.corr()) # We only used absolute values for visualization purposes! ..."hot-cold" view to just sort between 
+    if abs:
+        corr = np.abs(df.corr()) # We only used absolute values for visualization purposes! ..."hot-cold" view to just sort between 
+    else:
+        corr = df.corr()
+
     # Mask the repeated values --> here: upper triangle
 
     #print(corr)

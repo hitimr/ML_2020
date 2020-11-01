@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "/Users/peterholzner/.local/share/virtualenvs/ML_2020-8PJoZtYC/bin/python"
+    "python.pythonPath": "/Users/peterholzner/.local/share/virtualenvs/ML_2020-8PJoZtYC/bin/python",
+    "python.dataScience.jupyterServerURI": "local"
 }
