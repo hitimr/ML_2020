@@ -4,22 +4,35 @@ from  sklearn import preprocessing
 from sklearn.impute import SimpleImputer
 
 
-def preprocess(df): 
-    # Formatting 
+def preprocess(df, **args): 
+    ### Formatting 
     df = df.astype('float') 
     data = df.iloc[:,2:-1]
     labels = df.iloc[:,[-1]]
 
-    # Imputation
-    imp = SimpleImputer(missing_values=np.NaN, strategy="median") 
+    ### Imputation
+    # No argument passed  
+    if args["imputation"] == None:
+        imp = SimpleImputer(missing_values=np.NaN, strategy="constant", fill_value=0) 
+
+    # Impute with fixed value
+    if type(args["imputation"]) == float or type(args["imputation"]) == int:
+        imp = SimpleImputer(missing_values=np.NaN, strategy="constant", fill_value=args["imputation"]) 
+
+    # Impute with other strategy
+    else:
+        imp = SimpleImputer(missing_values=np.NaN, strategy=args["imputation"]) 
+
+    ## Perfom imputation  
     imp.fit(data)
     data = imp.transform(data)
 
 
-    # Scaling
-    min_max_scaler = preprocessing.MinMaxScaler()
-    data_scaled = min_max_scaler.fit_transform(data)
-    data = pd.DataFrame(data_scaled)
+    ### Scaling
+    if args["MinMaxScaling"] == True:
+        min_max_scaler = preprocessing.MinMaxScaler()
+        data_scaled = min_max_scaler.fit_transform(data)
+        data = pd.DataFrame(data_scaled)
 
     return data, labels
 
