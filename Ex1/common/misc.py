@@ -28,3 +28,9 @@ def compare_df(df_a, df_b, col_name):
 def count_missing_vals(df):   
     # Helopful ressource: https://towardsdatascience.com/how-to-check-for-missing-values-in-pandas-d2749e45a345
     return df.isna().sum().sum()
+
+
+def create_out_dir():
+    import os
+    if not os.path.exists('out'):
+        os.makedirs('out')
