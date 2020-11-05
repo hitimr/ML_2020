@@ -24,3 +24,7 @@ def compare_df(df_a, df_b, col_name):
     return identical_cnt / float(size), (size - identical_cnt) / float(size)
 
 
+
+def count_missing_vals(df):   
+    # Helopful ressource: https://towardsdatascience.com/how-to-check-for-missing-values-in-pandas-d2749e45a345
+    return df.isna().sum().sum()
