@@ -11,7 +11,7 @@ class ModelTrainer():
     best_result = pd.DataFrame
 
     def __init__(self, sklearn_model, params, x_train, y_train, x_test, y_test, f_eval, thread_cnt=8):
-        """Set up the trainer
+        """Initialize the trainer
 
         Args:
             sklearn_model (object): Model from sklearn. for example KNNei...
@@ -23,8 +23,6 @@ class ModelTrainer():
             f_eval (function): function for evaluating a given model that returns a value indicating the score of a model. the model with the highest score is picked
             thread_cnt (int. optional): number of threads for processing
 
-        Returns:
-            dict, float: dictionary containing best set of parameters, best score
         """        
         self.sklearn_model = sklearn_model
         self.params = params
@@ -37,6 +35,11 @@ class ModelTrainer():
     
 
     def train(self):
+        """Strart the training with multiple threads (thread_cnt)
+
+        Returns:
+            dict, float: dictionary containing best set of parameters, best score
+        """        
         start_time = time()
 
         # reset previous results
@@ -92,7 +95,8 @@ if __name__ == "__main__":
     params = {
         "n_neighbors" : list(range(1, 20)), 
         "weights" : ["uniform", "distance"],
-        "algorithm" : ["auto", "ball_tree", "kd_tree", "brute"]}
+        "algorithm" : ["auto", "ball_tree", "kd_tree", "brute"]
+        }
 
 
     data = load_iris()
