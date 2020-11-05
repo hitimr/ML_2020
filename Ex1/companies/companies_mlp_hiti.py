@@ -41,7 +41,7 @@ params = {
     "hidden_layer_sizes" : [(100,)], 
     "alpha" : [0.0001, 0.0002]}
 
-modeltrainer = ModelTrainer(MLPClassifier, params, x_train, y_train, x_test, y_test, accuracy_score)
+modeltrainer = ModelTrainer(MLPClassifier, params, x_train, y_train, x_test, y_test, companies_data_preprocessor.calculate_score, thread_cnt=8)
 modeltrainer.train()
 
 # # Model Training
