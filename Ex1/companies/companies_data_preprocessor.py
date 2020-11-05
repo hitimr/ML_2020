@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from  sklearn import preprocessing
+from sklearn.metrics import confusion_matrix 
 from sklearn.impute import SimpleImputer
 
 
@@ -55,7 +56,9 @@ def drop_cols(df, cutoff):
     return df
 
 
-def calculate_score(conf_mat):
+def calculate_score(y_test, y_pred):
+
+    conf_mat = confusion_matrix(y_test, y_pred)
     """ Confucsion Matrix:
     
                     actual solv.   actual bankrupt

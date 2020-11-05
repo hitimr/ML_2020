@@ -1,55 +1,32 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[10]:
 
 
 import scipy, time, random, time
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt 
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
 
 # required for importin modules from other directories
 import os,sys,inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir) 
+sys.path.insert(0,parentdir)
+
 from common.data_parser import *
 from common.misc import *
+import companies_data_preprocessor
+from common.model_trainer import ModelTrainer
 
 
-# In[2]:
-
-
-def preprocess(df):
-    
-    df = drop_cols(df, 0.05)
-
-    df = df.replace(np.NaN, 0)
-    df = df.replace("b'0'", 0)
-    df = df.replace("b'1'", 1)
-    print("Number of missing values:", count_missing_vals(df))
-    return df
-
-
-def drop_cols(df, cutoff):
-    row_cnt = df.shape[0]
-    dropped_cols = []
-
-    # Iterate over columns and calculate relative amount of missing data
-    for col in df:
-        missing_cnt = df[col].isna().sum()
-
-        # drop col if above cutoff
-        if missing_cnt / row_cnt > cutoff:
-
-            dropped_cols.append(col)
-
-    df = df.drop(dropped_cols, axis=1)
-    print("Dropped", dropped_cols)
-    return df
+# In[11]:
 
 
 def replace_missing_vals(df):
@@ -60,49 +37,55 @@ def replace_missing_vals(df):
     return df
 
 
-# In[3]:
-
-
-def count_missing_vals(df):   
-    # Helopful ressource: https://towardsdatascience.com/how-to-check-for-missing-values-in-pandas-d2749e45a345
-    #print(df.isna())
-    return df.isna().sum().sum()
-
-
-# In[4]:
+# In[12]:
 
 
 df = parse_companies(5)
+data, labels = companies_data_preprocessor.preprocess(df, MinMaxScaling=True, imputation=1)
+
+x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=0.3, random_state=1 )
 
 
-df = preprocess(df)
+# In[13]:
 
 
-# In[5]:
+params = {
+    "n_neighbors" : list(range(1, 20)), 
+    "weights" : ["uniform", "distance"]}
+
+modeltrainer = ModelTrainer(KNeighborsClassifier, params, x_train, y_train, x_test, y_test, accuracy_score)
+modeltrainer.train()
 
 
-#data = df.iloc[:,[2,3,4,5]]
-data = df.iloc[:,0:-2]  # remove class col
-labels = df.iloc[:,[-1]]    # only class col
-x_train, x_test, y_train, y_test = train_test_split(data,labels, test_size=0.2, random_state=1 )
+# In[9]:
 
 
+def analyze_model(model, x_test):
+    prediction = pd.DataFrame()
+    prediction["class"] = model.predict(x_test)
+    
 
-# In[6]:
+    accuracy = compare_df(prediction, y_test, "class")[0]
+    confusion_mat = confusion_matrix(y_test, prediction)
+    cost = companies_data_preprocessor.calculate_score(confusion_mat)
+
+    return [accuracy, cost]
 
 
-print(y_train)
+# In[10]:
 
 
-# In[7]:
-
-
-max_k = 2
-for k in range(1, max_k):
-    model = KNeighborsClassifier(n_neighbors=k).fit(x_train, y_train)
-    result = pd.DataFrame()
-    result["class"] = model.predict(x_test)
-    print("k = %s Accuracy = %s" % (k, compare_df(result, y_test, "class")[0]))
+max_k = 40
+min_k = 40
+results = []
+for k in range(min_k, max_k+1):
+    model = KNeighborsClassifier(n_neighbors=k, weights="uniform").fit(x_train, y_train)
+    results.append(analyze_model(model, x_test))
+    
+results = pd.DataFrame(results, columns=["accuracy", "cost"])
+plt.plot(results["cost"])
+best_index = results["cost"].argmax()
+print("Best score: ", results.iloc[best_index]["cost"])
 
 
 # In[ ]:
