@@ -2,6 +2,7 @@
 */out/
 .vscode
 .vscode/settings.json
+Ex1/companies/out/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
