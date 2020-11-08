@@ -111,6 +111,17 @@ def parse_congressional_voting(data_set):
 
     raise ValueError("Improper argument. Allowed arguments are lrn, sol, test")
 
+def parse_heart_disease():        
+    """imports the heart disease dataset.
+
+    Raises: ValueError: invalid argument
+
+    Returns: dataframe: pandas dataframe containing the requested dataset
+    """    
+    df = pd.read_csv(HEART_DISEASE_DIR + "heart.csv")
+    assert df.size == HEART_DISEASE_SIZE
+    return df
+
 
 if __name__ == "__main__":
     df = parse_congressional_voting("train")
