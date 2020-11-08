@@ -8,32 +8,8 @@ from sklearn.impute import SimpleImputer
 def preprocess(df, **args): 
     ### Formatting 
     df = df.astype('float') 
-    data = df.iloc[:,2:-1]
+    data = df.iloc[:,0:-1]
     labels = df.iloc[:,[-1]]
-
-    ### Imputation
-    # No argument passed  
-    if args["imputation"] == None:
-        imp = SimpleImputer(missing_values=np.NaN, strategy="constant", fill_value=0) 
-
-    # Impute with fixed value
-    if type(args["imputation"]) == float or type(args["imputation"]) == int:
-        imp = SimpleImputer(missing_values=np.NaN, strategy="constant", fill_value=args["imputation"]) 
-
-    # Impute with other strategy
-    else:
-        imp = SimpleImputer(missing_values=np.NaN, strategy=args["imputation"]) 
-
-    ## Perfom imputation  
-    imp.fit(data)
-    data = imp.transform(data)
-
-
-    ### Scaling
-    if args["MinMaxScaling"] == True:
-        min_max_scaler = preprocessing.MinMaxScaler()
-        data_scaled = min_max_scaler.fit_transform(data)
-        data = pd.DataFrame(data_scaled)
 
     return data, labels
 
@@ -68,8 +44,8 @@ def calculate_score(y_test, y_pred):
     """
 
     TP = - 1    # correct prediction of solvend company - we make a bit of money (negative cost)
-    FP = 20     # predicted solvent but company will go bancrupt - we lose a lot of money
-    FN = 1      # predicted bancrupt but company will stay solvent - we could have made a bit of money
+    FP = 100    # predicted solvent but company will go bancrupt - we lose a lot of money
+    FN = 10     # predicted bancrupt but company will stay solvent - we could have made a bit of money
     TN = 0      # correct prediction of company will go bancrupt - we neither make or lose money
 
     cost_mat = [

@@ -43,7 +43,8 @@ class ModelTrainer():
         start_time = time()
 
         # reset previous results
-        self.best_result = pd.DataFrame
+        self.best_result = pd.DataFrame()
+        self.result = pd.DataFrame()
 
         # Generate dictionaries of all posible parameter permutations
         keys, values = zip(*self.params.items())
@@ -75,7 +76,7 @@ class ModelTrainer():
 
 
     def save_result(self, fileName):
-        data = pd.DataFrame(self.best_result)
+        data = pd.DataFrame(self.result)
         data.to_csv(fileName, index=False)
 
     def best_parameter_set(self):
