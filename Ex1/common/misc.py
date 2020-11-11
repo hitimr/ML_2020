@@ -32,7 +32,7 @@ def plot_confusion_matrix(cm, classes, normalize=False, title="Confusion matrix"
     num_samples = 1
     if normalize:
         num_samples = np.sum(cm)
-    print("#",num_samples)
+    #print("#",num_samples)
     plt.imshow(cm, interpolation = "nearest", cmap = cmap)
     plt.title(title)
     plt.colorbar()
