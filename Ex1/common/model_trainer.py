@@ -89,6 +89,12 @@ class ModelTrainer():
         return parameter_set
 
     def cm_setup(self, classes_names, sample_weights=None):
+        """Setup function for confusion matrix calculation. Should be called first to enable confusion matrix calculations.
+
+        Args:
+            classes_names... list of class names as given in 
+
+        """
         self.classes_names = classes_names
         self.sample_weights = sample_weights
 
@@ -101,8 +107,7 @@ class ModelTrainer():
             cmap...     Colormap, should be one of matplotlibs, or the name of one
 
         Different colormaps can either be given directly, as above, or by name.
-
-
+        For more info on colormap selection: https://matplotlib.org/3.1.1/tutorials/colors/colormaps.html
         """
         if isinstance(cmap, str):
             cmap = plt.get_cmap(cmap)
