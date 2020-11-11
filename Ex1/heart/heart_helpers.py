@@ -3,17 +3,19 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from IPython.display import display
+from sklearn.impute import KNNImputer
 
 HEART_SAMPLES, HEART_NUM_COLS = 303, 14
 
 HEART_FEATS = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg', 'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal']
 HEART_TARGET = "target"
 
+
 class heart_columns:
     explanations = {
         "age": "age",
         "sex": "sex",
-        "cp": "chest pain", 
+        "cp": "chest pain type, Value 0: typical angina, Value 1: atypical angina, Value 2: non-anginal pain, Value 3: asymptomatic", 
         "trestbps": "resting blood pressure",
         "chol": "serum cholestoral in mg/dl",
         "fbs": "fasting blood sugar > 120 mg/dl",
@@ -79,9 +81,6 @@ def count_values(df, cols_to_count=[], mode=False, norm=False, print_counts=True
             print("#"*40)
         return_dict[col] = counts
     return return_dict
-
-from sklearn.impute import KNNImputer
-from common.misc import *
 
 
 def process_heart(df, impute_mode = 0):

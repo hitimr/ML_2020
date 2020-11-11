@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import itertools
 from multiprocessing import Pool
 from time import time
-
+from sklearn.metrics import confusion_matrix
+from .misc import plot_confusion_matrix
 
 class ModelTrainer():
     params = {}
@@ -31,8 +33,11 @@ class ModelTrainer():
         self.y_train = np.array(y_train).ravel() # not necessary but otherwise a warning might pop up
         self.y_test = np.array(y_test).ravel()
         self.f_eval = f_eval
+        self.sample_weights = None
+        self.classes_names = None
+        self.cms = None
         self.thread_cnt = thread_cnt
-    
+
 
     def train(self):
         """Strart the training with multiple threads (thread_cnt)
@@ -54,7 +59,13 @@ class ModelTrainer():
         with Pool(self.thread_cnt) as p:
             result = p.map(self.analyze_model, self.permutations_dict)
 
+
         # wrap up results
+        if self.classes_names: # acts as trigger for computation of cms
+            for i, dic in enumerate(result):
+                dic["id"] = i
+            self.cms = [(dic["id"] ,dic.pop("cm")) for dic in result]
+
         self.result = pd.DataFrame(result)
         self.best_result = self.result.iloc[self.result["score"].argmax()]  # store row with the best score
         end_time = time()
@@ -71,8 +82,18 @@ class ModelTrainer():
         y_pred = model.predict(self.x_test)    # make prediction
         score = self.f_eval(self.y_test, y_pred)        # used f_eval to evaluate score
         parameter_set["score"] = score  # add score to parameter set
+        if self.classes_names:
+            cm = confusion_matrix(self.y_test, y_pred, labels=self.classes_names,sample_weight=self.sample_weights)
+            parameter_set["cm"] = cm  # add score to parameter set
 
         return parameter_set
+
+    def cm_setup(self, classes_names, sample_weights=None):
+        self.classes_names = classes_names
+        self.sample_weights = sample_weights
+
+    def plot_confusion_matrix(self, id:int, title="Confusion matrix", cmap=plt.cm.Reds):
+        return plot_confusion_matrix(self.cms[id][1], self.classes_names, normalize=True, title=title, cmap=cmap)
 
 
     def save_result(self, fileName):
