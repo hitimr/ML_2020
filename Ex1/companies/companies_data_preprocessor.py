@@ -34,7 +34,7 @@ def drop_cols(df, cutoff):
 
 def calculate_score(y_test, y_pred):
 
-    conf_mat = confusion_matrix(y_test, y_pred)
+
     """ Confucsion Matrix:
     
                     actual solv.   actual bankrupt
@@ -45,7 +45,7 @@ def calculate_score(y_test, y_pred):
 
     TP = - 1    # correct prediction of solvend company - we make a bit of money (negative cost)
     FP = 100    # predicted solvent but company will go bancrupt - we lose a lot of money
-    FN = 10     # predicted bancrupt but company will stay solvent - we could have made a bit of money
+    FN = 1      # predicted bancrupt but company will stay solvent - we could have made a bit of money
     TN = 0      # correct prediction of company will go bancrupt - we neither make or lose money
 
     cost_mat = [
@@ -53,9 +53,10 @@ def calculate_score(y_test, y_pred):
         [FN, TN]
     ]
 
-    max_cost = conf_mat.sum()
+    conf_mat = confusion_matrix(y_test, y_pred)
+    ideal_case =  (conf_mat[0][0] + conf_mat[0][1])*TP
     cost = conf_mat[0][0]*cost_mat[0][0] + conf_mat[1][1]*cost_mat[1][1] +\
         conf_mat[0][1]*cost_mat[0][1] + conf_mat[1][0]*cost_mat[1][0]
 
-    score = 1 - cost/max_cost
+    score = cost/ideal_case
     return score
