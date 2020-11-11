@@ -93,6 +93,19 @@ class ModelTrainer():
         self.sample_weights = sample_weights
 
     def plot_confusion_matrix(self, id:int, title="Confusion matrix", cmap=plt.cm.Reds):
+        """Plot a confusion matrix.
+
+        Args:
+            id...       id of cm to plot (can be selected from df)
+            title...    title?
+            cmap...     Colormap, should be one of matplotlibs, or the name of one
+
+        Different colormaps can either be given directly, as above, or by name.
+
+
+        """
+        if isinstance(cmap, str):
+            cmap = plt.get_cmap(cmap)
         return plot_confusion_matrix(self.cms[id][1], self.classes_names, normalize=True, title=title, cmap=cmap)
 
 
