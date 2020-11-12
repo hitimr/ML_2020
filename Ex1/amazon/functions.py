@@ -162,3 +162,6 @@ def Statistic(Y_valid,Y_pred,name):
     Y_valid_Norm = Y_valid / np.linalg.norm(Y_valid.Class)
 
     print(sqrt(mean_squared_error(Y_pred_Norm, Y_valid_Norm)))
+
+def FindBest_Params(df):
+    return df[df.score == np.max(df.score)]
