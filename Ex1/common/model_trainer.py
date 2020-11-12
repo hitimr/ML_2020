@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import itertools
 from multiprocessing import Pool
 from time import time
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score, precision_score
 from .misc import plot_confusion_matrix
 
 class ModelTrainer():
@@ -12,7 +12,7 @@ class ModelTrainer():
     sklearn_model = object
     best_result = pd.DataFrame
 
-    def __init__(self, sklearn_model, params, x_train, y_train, x_test, y_test, f_eval, thread_cnt=8):
+    def __init__(self, sklearn_model, params, x_train, y_train, x_test, y_test, f_eval=accuracy_score, thread_cnt=8):
         """Initialize the trainer
 
         Args:
@@ -33,10 +33,14 @@ class ModelTrainer():
         self.y_train = np.array(y_train).ravel() # not necessary but otherwise a warning might pop up
         self.y_test = np.array(y_test).ravel()
         self.f_eval = f_eval
-        self.sample_weights = None
-        self.classes_names = None
-        self.cms = None
         self.thread_cnt = thread_cnt
+
+        self.calc_cms = False
+        self.classes_names = None
+        self.sample_weights = None
+        self.cms = None
+
+        self._eval_setup = {}
 
 
     def train(self):
@@ -61,10 +65,10 @@ class ModelTrainer():
 
 
         # wrap up results
-        if self.classes_names: # acts as trigger for computation of cms
+        if self.calc_cms: # acts as trigger for computation of cms
             for i, dic in enumerate(result):
                 dic["id"] = i
-            self.cms = [(dic["id"] ,dic.pop("cm")) for dic in result]
+            self.cms = [(dic["id"], dic.pop("cm")) for dic in result]
 
         self.result = pd.DataFrame(result)
         self.best_result = self.result.iloc[self.result["score"].argmax()]  # store row with the best score
@@ -78,15 +82,47 @@ class ModelTrainer():
 
     def analyze_model(self, parameter_set):
         model = self.sklearn_model(**parameter_set)
+        start = time()
         model.fit(self.x_train, self.y_train)  # fit the model
+        parameter_set["train_time"] = time() - start
+        start = time()
         y_pred = model.predict(self.x_test)    # make prediction
-        score = self.f_eval(self.y_test, y_pred)        # used f_eval to evaluate score
-        parameter_set["score"] = score  # add score to parameter set
-        if self.classes_names:
+        parameter_set["inference_time"] = time() - start
+
+        parameter_set["score"] = self.f_eval(self.y_test, y_pred)   # add score to parameter set --> custom score given by f_eval
+        # Add remaining scores
+        for score, func in zip(["accuracy", "f1", "recall", "precision"], [accuracy_score, f1_score, recall_score, precision_score]):
+            if score in self._eval_setup.keys():
+                parameter_set[score] = func(self.y_test, y_pred, **self._eval_setup[score])
+            else:
+                if score == "accuracy":
+                    parameter_set[score] = func(self.y_test, y_pred)
+                else:
+                    parameter_set[score] = func(self.y_test, y_pred, average=None)
+                    
+
+        if self.calc_cms:
             cm = confusion_matrix(self.y_test, y_pred, labels=self.classes_names,sample_weight=self.sample_weights)
             parameter_set["cm"] = cm  # add score to parameter set
 
         return parameter_set
+
+    @property
+    def eval_setup(self, a_dict:dict):
+        self._eval_setup = a_dict
+
+    @eval_setup.setter
+    def eval_setup(self, score:str, args):
+        self._eval_setup[score] = args
+
+    @eval_setup.getter
+    def eval_setup(self):
+        return self._eval_setup
+
+    @eval_setup.getter
+    def eval_setup(self, key:str):
+        return self._eval_setup[key]
+
 
     def cm_setup(self, classes_names, sample_weights=None):
         """Setup function for confusion matrix calculation. Should be called first to enable confusion matrix calculations.
@@ -95,6 +131,7 @@ class ModelTrainer():
             classes_names... list of class names as given in 
 
         """
+        self.calc_cms = True
         self.classes_names = classes_names
         self.sample_weights = sample_weights
 

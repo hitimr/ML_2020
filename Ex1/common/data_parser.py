@@ -19,7 +19,7 @@ def parse_companies(year=None):
         dataframe if said year is returned
 
     """    
-    search_path = COMPANY_DATA_DIR + "\\*.*"
+    search_path = COMPANY_DATA_DIR + "/*.*"
     file_list = glob.glob(search_path)
     assert len(file_list) == 5  # check if parsing worked
 
@@ -43,17 +43,17 @@ def parse_breastCancer(data_set):
     Returns: dataframe: pandas dataframe containing the requested dataset
     """    
     if data_set == "lrn":
-        df = pd.read_csv(BREASTCANCER_DATA_DIR + "\\breast-cancer-diagnostic.shuf.lrn.csv")
+        df = pd.read_csv(BREASTCANCER_DATA_DIR + "/breast-cancer-diagnostic.shuf.lrn.csv")
         assert df.size == BREASTCANCER_LRN_SIZE
         return df
 
     if data_set == "sol":
-        df = pd.read_csv(BREASTCANCER_DATA_DIR + "\\breast-cancer-diagnostic.shuf.sol.ex.csv")
+        df = pd.read_csv(BREASTCANCER_DATA_DIR + "/breast-cancer-diagnostic.shuf.sol.ex.csv")
         assert df.size == BREASTCANCER_SOL_SIZE
         return df
     
     if data_set == "tes":
-        df = pd.read_csv(BREASTCANCER_DATA_DIR + "\\breast-cancer-diagnostic.shuf.tes.csv")
+        df = pd.read_csv(BREASTCANCER_DATA_DIR + "/breast-cancer-diagnostic.shuf.tes.csv")
         assert df.size == BREASTCANCER_TES_SIZE
         return df
 
@@ -69,17 +69,17 @@ def parse_amazon(data_set):
     Returns: dataframe: pandas dataframe containing the requested dataset
     """    
     if data_set == "lrn":
-        df = pd.read_csv(AMAZON_DATA_DIR + "\\amazon_review_ID.shuf.lrn.csv")
+        df = pd.read_csv(AMAZON_DATA_DIR + "/amazon_review_ID.shuf.lrn.csv")
         assert df.size == AMAZON_LRN_SIZE
         return df
 
     if data_set == "sol":
-        df = pd.read_csv(AMAZON_DATA_DIR + "\\amazon_review_ID.shuf.sol.ex.csv")
+        df = pd.read_csv(AMAZON_DATA_DIR + "/amazon_review_ID.shuf.sol.ex.csv")
         assert df.size == AMAZON_SOL_SIZE
         return df
     
     if data_set == "tes":
-        df = pd.read_csv(AMAZON_DATA_DIR + "\\amazon_review_ID.shuf.tes.csv")
+        df = pd.read_csv(AMAZON_DATA_DIR + "/amazon_review_ID.shuf.tes.csv")
         assert df.size == AMAZON_TES_SIZE
         return df
 
@@ -95,17 +95,17 @@ def parse_congressional_voting(data_set):
     Returns: dataframe: pandas dataframe containing the requested dataset
     """    
     if data_set == "sampleSubmission":
-        df = pd.read_csv(CONGRESSIONAL_VOTING_DIR + "\\CongressionalVotingID.shuf.sampleSubmission.csv")
+        df = pd.read_csv(CONGRESSIONAL_VOTING_DIR + "/CongressionalVotingID.shuf.sol.ex.csv")
         assert df.size == CONGRESSIONALVOTING_SAMPLE_SIZE
         return df
 
     if data_set == "test":
-        df = pd.read_csv(CONGRESSIONAL_VOTING_DIR + "\\CongressionalVotingID.shuf.test.csv")
+        df = pd.read_csv(CONGRESSIONAL_VOTING_DIR + "/CongressionalVotingID.shuf.tes.csv")
         assert df.size == CONGRESSIONALVOTING_TEST_SIZE
         return df
     
     if data_set == "train":
-        df = pd.read_csv(CONGRESSIONAL_VOTING_DIR + "\\CongressionalVotingID.shuf.train.csv")
+        df = pd.read_csv(CONGRESSIONAL_VOTING_DIR + "/CongressionalVotingID.shuf.lrn.csv")
         assert df.size == CONGRESSIONALVOTING_TRAIN_SIZE
         return df
 
@@ -127,7 +127,7 @@ def parse_heart_disease(data_set = "sma"):
         assert df.size == HEART_DISEASE_SIZE
         return df
 
-    raise ValueError("Improper argument. Allowed arguments are lrn, sol, test")
+    raise ValueError("Improper argument. Allowed arguments are sma, big")
 
 
 if __name__ == "__main__":
