@@ -36,8 +36,7 @@ class ModelTrainer():
         self.thread_cnt = thread_cnt
 
         self.calc_cms = False
-        self.classes_names = None
-        self.sample_weights = None
+        self._cm_setup = {}
         self.cms = None
 
         self._eval_setup = {}
@@ -102,7 +101,10 @@ class ModelTrainer():
                     
 
         if self.calc_cms:
-            cm = confusion_matrix(self.y_test, y_pred, labels=self.classes_names,sample_weight=self.sample_weights)
+            cm = confusion_matrix(self.y_test, y_pred, **self._cm_setup)
+                    # cm_setup dict should map as below
+                    #labels=self._cm_setup["labels"],
+                    #sample_weight=self._cm_setup["sample_weights"])
             parameter_set["cm"] = cm  # add score to parameter set
 
         return parameter_set
@@ -123,8 +125,7 @@ class ModelTrainer():
     def eval_setup(self, key:str):
         return self._eval_setup[key]
 
-
-    def cm_setup(self, classes_names, sample_weights=None):
+    def cm_setup(self, labels, sample_weight=None):
         """Setup function for confusion matrix calculation. Should be called first to enable confusion matrix calculations.
 
         Args:
@@ -132,8 +133,9 @@ class ModelTrainer():
 
         """
         self.calc_cms = True
-        self.classes_names = classes_names
-        self.sample_weights = sample_weights
+        self._cm_setup["labels"] = labels
+        if sample_weight:
+            self._cm_setup["sample_weight"] = sample_weight
 
     def plot_confusion_matrix(self, id:int, title="Confusion matrix", cmap=plt.cm.Reds):
         """Plot a confusion matrix.
@@ -148,7 +150,7 @@ class ModelTrainer():
         """
         if isinstance(cmap, str):
             cmap = plt.get_cmap(cmap)
-        return plot_confusion_matrix(self.cms[id][1], self.classes_names, normalize=True, title=title, cmap=cmap)
+        return plot_confusion_matrix(self.cms[id][1], self._cm_setup["labels"], normalize=True, title=title, cmap=cmap)
 
 
     def save_result(self, fileName):
@@ -160,6 +162,12 @@ class ModelTrainer():
 
     def best_score(self):
         return self.best_result["score"]
+
+    def worst_score(self):
+        return self.result["score"].min()
+
+    def best_parameter_set(self):
+        return self.result[self.result["score"] == self.worst_score()].to_dict()
 
 
 # Example for using the Model Trainer
