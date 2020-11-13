@@ -4,15 +4,16 @@ import matplotlib.pyplot as plt
 import itertools
 from multiprocessing import Pool
 from time import time
-from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score, precision_score
+from sklearn.metrics import confusion_matrix
 from .misc import plot_confusion_matrix
+from sklearn.metrics import f1_score as f1_score_eval
 
 class ModelTrainer():
     params = {}
     sklearn_model = object
     best_result = pd.DataFrame
 
-    def __init__(self, sklearn_model, params, x_train, y_train, x_test, y_test, f_eval=accuracy_score, thread_cnt=8):
+    def __init__(self, sklearn_model, params, x_train, y_train, x_test, y_test, f_eval, thread_cnt=8):
         """Initialize the trainer
 
         Args:
@@ -33,13 +34,10 @@ class ModelTrainer():
         self.y_train = np.array(y_train).ravel() # not necessary but otherwise a warning might pop up
         self.y_test = np.array(y_test).ravel()
         self.f_eval = f_eval
-        self.thread_cnt = thread_cnt
-
-        self.calc_cms = False
-        self._cm_setup = {}
+        self.sample_weights = None
+        self.classes_names = None
         self.cms = None
-
-        self._eval_setup = {}
+        self.thread_cnt = thread_cnt
 
 
     def train(self):
@@ -64,78 +62,51 @@ class ModelTrainer():
 
 
         # wrap up results
-        if self.calc_cms: # acts as trigger for computation of cms
+        if self.classes_names: # acts as trigger for computation of cms
             for i, dic in enumerate(result):
                 dic["id"] = i
-            self.cms = [(dic["id"], dic.pop("cm")) for dic in result]
+            self.cms = [(dic["id"] ,dic.pop("cm")) for dic in result]
 
         self.result = pd.DataFrame(result)
         self.best_result = self.result.iloc[self.result["score"].argmax()]  # store row with the best score
+        self.best_result = self.result.iloc[self.result["f1_score"].argmax()]  # store row with the best score
+        self.best_result = self.result.iloc[self.result["recall"].argmax()]  # store row with the best score
+        self.best_result = self.result.iloc[self.result["precision"].argmax()]  # store row with the best score
         end_time = time()
         print("Finished evaluation")
         print("Best parameteters found with:", self.best_parameter_set())
         print("score=", self.best_score())
+        #print("f1_score=", self.best_f1_score())
+        #print("recall_score=", self.best_recall_score())
+        #print("precision_score=", self.best_precision_score())
         print("Total evaluation time = {:.2f}s".format(end_time-start_time))
 
         return self.best_parameter_set(), self.best_score()
 
     def analyze_model(self, parameter_set):
         model = self.sklearn_model(**parameter_set)
-        start = time()
         model.fit(self.x_train, self.y_train)  # fit the model
-        parameter_set["train_time"] = time() - start
-        start = time()
         y_pred = model.predict(self.x_test)    # make prediction
-        parameter_set["inference_time"] = time() - start
+        score = self.f_eval(self.y_test, y_pred)        # used f_eval to evaluate score
+        f1_score = f1_score_eval(self.y_test, y_pred, average='macro')
+        cm = confusion_matrix(self.y_test, y_pred)
+        recall = np.mean(np.diag(cm) / np.sum(cm, axis = 1))
+        precision = np.mean(np.diag(cm) / np.sum(cm, axis = 0))
 
-        parameter_set["score"] = self.f_eval(self.y_test, y_pred)   # add score to parameter set --> custom score given by f_eval
-        # Add remaining scores
-        for score, func in zip(["accuracy", "f1", "recall", "precision"], [accuracy_score, f1_score, recall_score, precision_score]):
-            if score in self._eval_setup.keys():
-                parameter_set[score] = func(self.y_test, y_pred, **self._eval_setup[score])
-            else:
-                if score == "accuracy":
-                    parameter_set[score] = func(self.y_test, y_pred)
-                else:
-                    parameter_set[score] = func(self.y_test, y_pred, average=None)
-                    
+        parameter_set["score"] = score  # add score to parameter set
+        parameter_set["f1_score"] = f1_score 
+        parameter_set["recall"] = recall
+        parameter_set["precision"] = precision
 
-        if self.calc_cms:
-            cm = confusion_matrix(self.y_test, y_pred, **self._cm_setup)
-                    # cm_setup dict should map as below
-                    #labels=self._cm_setup["labels"],
-                    #sample_weight=self._cm_setup["sample_weights"])
+        if self.classes_names:
+            cm = confusion_matrix(self.y_test, y_pred, labels=self.classes_names,sample_weight=self.sample_weights)
             parameter_set["cm"] = cm  # add score to parameter set
 
         return parameter_set
 
-    @property
-    def eval_setup(self, a_dict:dict):
-        self._eval_setup = a_dict
-
-    @eval_setup.setter
-    def eval_setup(self, score:str, args):
-        self._eval_setup[score] = args
-
-    @eval_setup.getter
-    def eval_setup(self):
-        return self._eval_setup
-
-    @eval_setup.getter
-    def eval_setup(self, key:str):
-        return self._eval_setup[key]
-
-    def cm_setup(self, labels, sample_weight=None):
-        """Setup function for confusion matrix calculation. Should be called first to enable confusion matrix calculations.
-
-        Args:
-            classes_names... list of class names as given in 
-
-        """
-        self.calc_cms = True
-        self._cm_setup["labels"] = labels
-        if sample_weight:
-            self._cm_setup["sample_weight"] = sample_weight
+    def cm_setup(self, classes_names, sample_weights=None):
+        self.classes_names = classes_names
+        self.sample_weights = sample_weights
 
     def plot_confusion_matrix(self, id:int, title="Confusion matrix", cmap=plt.cm.Reds):
         """Plot a confusion matrix.
@@ -146,11 +117,13 @@ class ModelTrainer():
             cmap...     Colormap, should be one of matplotlibs, or the name of one
 
         Different colormaps can either be given directly, as above, or by name.
-        For more info on colormap selection: https://matplotlib.org/3.1.1/tutorials/colors/colormaps.html
+
+
         """
         if isinstance(cmap, str):
             cmap = plt.get_cmap(cmap)
-        return plot_confusion_matrix(self.cms[id][1], self._cm_setup["labels"], normalize=True, title=title, cmap=cmap)
+        return plot_confusion_matrix(self.cms[id][1], self.classes_names, normalize=True, title=title, cmap=cmap)
+
 
     def save_result(self, fileName):
         data = pd.DataFrame(self.result)
@@ -161,12 +134,15 @@ class ModelTrainer():
 
     def best_score(self):
         return self.best_result["score"]
+    
+    def best_f1_score(self):
+        return self.best_result["f1_score"]
+    
+    def best_recall_score(self):
+        return self.best_result["recall"]
 
-    def worst_score(self):
-        return self.result["score"].min()
-
-    def worst_parameter_set(self):
-        return self.result[self.result["score"] == self.worst_score()].to_dict()
+    def best_precision_score(self):
+        return self.best_result["precision"]
 
 
 # Example for using the Model Trainer
@@ -175,6 +151,7 @@ if __name__ == "__main__":
     from sklearn.model_selection import train_test_split
     from sklearn.metrics import accuracy_score
     from sklearn.datasets import load_iris
+    from sklearn.metrics import f1_score
 
     params = {
         "n_neighbors" : list(range(1, 20)), 
@@ -186,6 +163,6 @@ if __name__ == "__main__":
     data = load_iris()
     x_train, x_test, y_train, y_test = train_test_split(data.data, data.target, test_size=0.3, random_state=1)
 
-    modeltrainer = ModelTrainer(KNeighborsClassifier, params, x_train, y_train, x_test, y_test, accuracy_score, thread_cnt=4)
+    modeltrainer = ModelTrainer(KNeighborsClassifier, params, x_train, y_train, x_test, y_test, accuracy_score, f1_score, thread_cnt=4)
     modeltrainer.train()
     modeltrainer.save_result("common/iris_result.csv")
