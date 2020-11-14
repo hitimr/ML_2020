@@ -12,7 +12,7 @@ class ModelTrainer():
     sklearn_model = object
     best_result = pd.DataFrame
 
-    def __init__(self, sklearn_model, params, x_train, y_train, x_test, y_test, f_eval=accuracy_score, thread_cnt=8):
+    def __init__(self, sklearn_model, params:dict, x_train, y_train, x_test, y_test, f_eval=accuracy_score, thread_cnt=8):
         """Initialize the trainer
 
         Args:
@@ -28,6 +28,7 @@ class ModelTrainer():
         """        
         self.sklearn_model = sklearn_model
         self.params = params
+        self.param_keys = list(params.keys())
         self.x_train = np.array(x_train)
         self.x_test = np.array(x_test)
         self.y_train = np.array(y_train).ravel() # not necessary but otherwise a warning might pop up
@@ -97,7 +98,7 @@ class ModelTrainer():
                 if score == "accuracy":
                     parameter_set[score] = func(self.y_test, y_pred)
                 else:
-                    parameter_set[score] = func(self.y_test, y_pred, average=None)
+                    parameter_set[score] = func(self.y_test, y_pred, average='macro')
                     
 
         if self.calc_cms:
@@ -156,17 +157,21 @@ class ModelTrainer():
         data = pd.DataFrame(self.result)
         data.to_csv(fileName, index=False)
 
-    def best_parameter_set(self):
-        return self.best_result.drop("score").to_dict()
+    def best_parameter_set(self, dict_orient='dict'):
+        #return self.best_result.drop("score").to_dict()
+        par = self.result.iloc[self.result["score"].idxmax(),:]
+        return par[self.param_keys].to_dict()
 
-    def best_score(self):
-        return self.best_result["score"]
+    def best_score(self, ret_index=False):
+        #return self.best_result["score"]
+        return self.result["score"].max(), self.result["score"].idxmax() if ret_index else self.result["score"].max()
 
-    def worst_score(self):
-        return self.result["score"].min()
+    def worst_score(self, ret_index=False):
+        return self.result["score"].min(), self.result["score"].idxmin() if ret_index else self.result["score"].min()
 
-    def worst_parameter_set(self):
-        return self.result[self.result["score"] == self.worst_score()].to_dict()
+    def worst_parameter_set(self, dict_orient='dict'):
+        par = self.result.iloc[self.result["score"].idxmin(),:]
+        return par[self.param_keys].to_dict()
 
 
 # Example for using the Model Trainer

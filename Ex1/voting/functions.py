@@ -32,7 +32,7 @@ VOTING_CLASSES = ["democrat", "republican"]
 
 DEF_MAPPING = {"y": 1, "n": -1, "unknown": 0}
 
-def process_heart(df_in, answer_mapping=DEF_MAPPING, scaler=None, ret_xy=False):
+def process_voting(df_in, answer_mapping=DEF_MAPPING, scaler=None, ret_xy=False):
     """
     arguments:
         df...               the raw dataframe as given by parser

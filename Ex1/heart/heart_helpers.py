@@ -51,7 +51,7 @@ class heart_columns:
         if isinstance(col, int): return self.order[col]
 
 
-def process_heart(df, impute_mode = 0, scaler=None):
+def process_heart(df, impute_mode = 0, scaler=None, ret_xy=False):
     """
     arguments:
         impute_mode...  0 = drop
@@ -74,7 +74,7 @@ def process_heart(df, impute_mode = 0, scaler=None):
         df_ret["thal"] = df_ret["thal"].astype("int64")
         if scaler:
             df_ret[feats] = scaler.fit_transform(X=df_ret[feats])
-        return df_ret
+        return df_ret if ret_xy else df_ret[HEART_FEATS], df_ret[HEART_TARGET]
 
     elif impute_mode == 1:
         try:
@@ -92,7 +92,7 @@ def process_heart(df, impute_mode = 0, scaler=None):
         after[attr+"Match"] = np.where(df_ret[attr] == after[attr], True, False)
         attr = "thal"
         after[attr+"Match"] = np.where(df_ret[attr] == after[attr], True, False)
-        return after
+        return after if ret_xy else after[HEART_FEATS], after[HEART_TARGET]
 
     elif impute_mode == 2:
         try:
@@ -107,4 +107,4 @@ def process_heart(df, impute_mode = 0, scaler=None):
         df_ret["thal"] = df_ret["thal"].astype("int64")
         if scaler:
             df_ret[feats] = scaler.fit_transform(df_ret[feats])
-        return df_ret
+        return df_ret if ret_xy else df_ret[HEART_FEATS], df_ret[HEART_TARGET]
