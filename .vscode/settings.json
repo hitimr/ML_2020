@@ -1,6 +1,5 @@
 {
-    "python.dataScience.jupyterServerURI": "local",
-    "python.pythonPath": "/Users/peterholzner/.local/share/virtualenvs/ML_2020-8PJoZtYC/bin/python",
     "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "jupyter.jupyterServerType": "local"
 }
