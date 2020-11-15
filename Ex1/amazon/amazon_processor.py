@@ -40,7 +40,7 @@ def Preprocessing_Amazon(df_train, df_target, feature_method = "kBest", k = 50, 
         fea = FeatureSelection_kBest(k)
         df_train = fea.fit_transform(df_train, df_target)
     if(feature_method == "PCA"):
-        fea = FeatureSelection_PCA(k, svd_solver='full')
+        fea = FeatureSelection_PCA(k)
         df_train = fea.fit(df_train.values).transform(df_train.values)
 
 
@@ -66,11 +66,11 @@ def PlotHist(df,ylabel,xlabel,title,savename,bins,size):
     plt.ylabel(ylabel, fontsize=size)
     plt.xlabel(xlabel, fontsize=size)
     plt.xlabel(xlabel, fontsize=size)
-    plt.title(title, fontsize=size)
+    #plt.title(title, fontsize=size)
     plt.hist(df["Class"],bins,facecolor='g')
     plt.grid()
-    name = "Bilder/" + savename
-    plt.savefig(name)
+    name = "out/" + savename
+    plt.savefig(name+".pdf")
 
 def Plot_preprocessing(df_raw, Feature_Selector, Scaler, Model,X):
     mpl.style.use('seaborn')
@@ -89,8 +89,8 @@ def Plot_preprocessing(df_raw, Feature_Selector, Scaler, Model,X):
         plt.ylabel(X)
         plt.title(titel)
         plt.legend()
-        save = "Bilder/" + Model + "_with_different_k_sclaer_"+ X + Feature_Selector
-        plt.savefig(save)
+        save = "out/kBest|PCA/" + Model + "_with_different_k_sclaer_"+ X + Feature_Selector
+        plt.savefig(save+".pdf")
 
 def FindBestK_Scaler(df, model):
     df_best = df[ df['Model'] == model]
