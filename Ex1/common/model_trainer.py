@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import itertools
 from multiprocessing import Pool
 from time import time
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, recall_score, precision_score
 from .misc import plot_confusion_matrix
 
 class ModelTrainer():
@@ -12,7 +12,7 @@ class ModelTrainer():
     sklearn_model = object
     best_result = pd.DataFrame
 
-    def __init__(self, sklearn_model, params, x_train, y_train, x_test, y_test, f_eval, thread_cnt=8):
+    def __init__(self, sklearn_model, params:dict, x_train, y_train, x_test, y_test, f_eval=accuracy_score, thread_cnt=8):
         """Initialize the trainer
 
         Args:
@@ -28,15 +28,19 @@ class ModelTrainer():
         """        
         self.sklearn_model = sklearn_model
         self.params = params
+        self.param_keys = list(params.keys())
         self.x_train = np.array(x_train)
         self.x_test = np.array(x_test)
         self.y_train = np.array(y_train).ravel() # not necessary but otherwise a warning might pop up
         self.y_test = np.array(y_test).ravel()
         self.f_eval = f_eval
-        self.sample_weights = None
-        self.classes_names = None
-        self.cms = None
         self.thread_cnt = thread_cnt
+
+        self.calc_cms = False
+        self._cm_setup = {}
+        self.cms = None
+
+        self._eval_setup = {}
 
 
     def train(self):
@@ -61,10 +65,10 @@ class ModelTrainer():
 
 
         # wrap up results
-        if self.classes_names: # acts as trigger for computation of cms
+        if self.calc_cms: # acts as trigger for computation of cms
             for i, dic in enumerate(result):
                 dic["id"] = i
-            self.cms = [(dic["id"] ,dic.pop("cm")) for dic in result]
+            self.cms = [(dic["id"], dic.pop("cm")) for dic in result]
 
         self.result = pd.DataFrame(result)
         self.best_result = self.result.iloc[self.result["score"].argmax()]  # store row with the best score
@@ -78,25 +82,61 @@ class ModelTrainer():
 
     def analyze_model(self, parameter_set):
         model = self.sklearn_model(**parameter_set)
+        start = time()
         model.fit(self.x_train, self.y_train)  # fit the model
+        parameter_set["train_time"] = time() - start
+        start = time()
         y_pred = model.predict(self.x_test)    # make prediction
-        score = self.f_eval(self.y_test, y_pred)        # used f_eval to evaluate score
-        parameter_set["score"] = score  # add score to parameter set
-        if self.classes_names:
-            cm = confusion_matrix(self.y_test, y_pred, labels=self.classes_names,sample_weight=self.sample_weights)
+        parameter_set["inference_time"] = time() - start
+
+        parameter_set["score"] = self.f_eval(self.y_test, y_pred)   # add score to parameter set --> custom score given by f_eval
+        # Add remaining scores
+        for score, func in zip(["accuracy", "f1", "recall", "precision"], [accuracy_score, f1_score, recall_score, precision_score]):
+            if score in self._eval_setup.keys():
+                parameter_set[score] = func(self.y_test, y_pred, **self._eval_setup[score])
+            else:
+                if score == "accuracy":
+                    parameter_set[score] = func(self.y_test, y_pred)
+                else:
+                    parameter_set[score] = func(self.y_test, y_pred, average='macro')
+                    
+
+        if self.calc_cms:
+            cm = confusion_matrix(self.y_test, y_pred, **self._cm_setup)
+                    # cm_setup dict should map as below
+                    #labels=self._cm_setup["labels"],
+                    #sample_weight=self._cm_setup["sample_weights"])
             parameter_set["cm"] = cm  # add score to parameter set
 
         return parameter_set
 
-    def cm_setup(self, classes_names, sample_weights=None):
+    @property
+    def eval_setup(self, a_dict:dict):
+        self._eval_setup = a_dict
+
+    @eval_setup.setter
+    def eval_setup(self, score:str, args):
+        self._eval_setup[score] = args
+
+    @eval_setup.getter
+    def eval_setup(self):
+        return self._eval_setup
+
+    @eval_setup.getter
+    def eval_setup(self, key:str):
+        return self._eval_setup[key]
+
+    def cm_setup(self, labels, sample_weight=None):
         """Setup function for confusion matrix calculation. Should be called first to enable confusion matrix calculations.
 
         Args:
             classes_names... list of class names as given in 
 
         """
-        self.classes_names = classes_names
-        self.sample_weights = sample_weights
+        self.calc_cms = True
+        self._cm_setup["labels"] = labels
+        if sample_weight:
+            self._cm_setup["sample_weight"] = sample_weight
 
     def plot_confusion_matrix(self, id:int, title="Confusion matrix", cmap=plt.cm.Reds):
         """Plot a confusion matrix.
@@ -111,18 +151,27 @@ class ModelTrainer():
         """
         if isinstance(cmap, str):
             cmap = plt.get_cmap(cmap)
-        return plot_confusion_matrix(self.cms[id][1], self.classes_names, normalize=True, title=title, cmap=cmap)
-
+        return plot_confusion_matrix(self.cms[id][1], self._cm_setup["labels"], normalize=True, title=title, cmap=cmap)
 
     def save_result(self, fileName):
         data = pd.DataFrame(self.result)
         data.to_csv(fileName, index=False)
 
-    def best_parameter_set(self):
-        return self.best_result.drop("score").to_dict()
+    def best_parameter_set(self, dict_orient='dict'):
+        #return self.best_result.drop("score").to_dict()
+        par = self.result.iloc[self.result["score"].idxmax(),:]
+        return par[self.param_keys].to_dict()
 
-    def best_score(self):
-        return self.best_result["score"]
+    def best_score(self, ret_index=False):
+        #return self.best_result["score"]
+        return self.result["score"].max(), self.result["score"].idxmax() if ret_index else self.result["score"].max()
+
+    def worst_score(self, ret_index=False):
+        return self.result["score"].min(), self.result["score"].idxmin() if ret_index else self.result["score"].min()
+
+    def worst_parameter_set(self, dict_orient='dict'):
+        par = self.result.iloc[self.result["score"].idxmin(),:]
+        return par[self.param_keys].to_dict()
 
 
 # Example for using the Model Trainer

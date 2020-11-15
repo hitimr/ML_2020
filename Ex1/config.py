@@ -9,7 +9,6 @@ CONGRESSIONAL_VOTING_DIR = WORKSPACE_DIR + "/datasets/Congressional_Voting"
 HEART_DISEASE_DIR = WORKSPACE_DIR + "/datasets/heart"
 
 
-
 MIN_COMPANY_YEAR = 1
 MAX_COMPANY_YEAR = 5
 

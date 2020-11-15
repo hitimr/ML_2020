@@ -1,4 +1,8 @@
 {
+<<<<<<< HEAD
+=======
+    "python.pythonPath": "/Users/peterholzner/.local/share/virtualenvs/ML_2020-8PJoZtYC/bin/python",
+>>>>>>> 387b68d1d3757d0da0cffbc443f49660eac54cb9
     "python.linting.pylintEnabled": true,
     "python.linting.enabled": true,
     "jupyter.jupyterServerType": "local"
