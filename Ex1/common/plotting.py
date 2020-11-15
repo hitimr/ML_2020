@@ -78,9 +78,10 @@ def plot_mlp(results, scores="score", fileName=None, params=params_mlp, ylims=YL
             filters = " & ".join([str(x)+' == "'+str(v)+'"' for x, v in zip(rest, vals)])
             for line, hls_val in res_by_hls:
                 label = " / ".join([str(x) for x in vals]) + f" / {hls_val}"
+                ls = "-" if "tanh" in vals else "--"
                 line.query(filters).plot(
                     x=first_key, y=scores, label=label,
-                    ax=ax, marker="o", logx=LOGX)
+                    ax=ax, marker="o", logx=LOGX, linestyle=ls)
         plt.legend()
         ax.set_title(scores, fontsize=18)
 
