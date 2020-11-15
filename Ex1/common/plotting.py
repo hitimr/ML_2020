@@ -14,7 +14,26 @@ params = {
     "criterion": ["gini", "entropy"]
 }
 
-def plot_params(results, scores="score", fileName=None, params=params, ylims=YLIMS):
+def plot_params(results, scores="score", fileName=None, params=params, ylims=YLIMS, logx=LOGX):
+    """
+    Plots results for different params. Works well in conjunction with the modeltrainer...will probably be included in the future.
+
+    Formatting and order of params_dicts is import, see examples below:
+
+    params_rf = {
+        "n_estimators": [1, 8, 10, 12, 15, 20, 50, 100,  1000],
+        "max_features": ["sqrt", "log2"],
+        "criterion": ["gini", "entropy"]
+    }
+
+    params_knn = {
+    "n_neighbors" : list(range(3,50)), 
+    "weights" : ["uniform", "distance"],
+    "p" : [1,2]
+    }
+
+    Note that the first param/key in the dict supplies the x-axis for the plots.
+    """
     param_keys = list(params)
     first_key = param_keys[0]
     rest = param_keys[1:]
@@ -27,7 +46,41 @@ def plot_params(results, scores="score", fileName=None, params=params, ylims=YLI
             filters = " & ".join([str(x)+' == "'+str(v)+'"' for x, v in zip(rest, vals)])
             results.query(filters).plot(
                 x=first_key, y=scores, label=label,
-                ax=ax, marker="o", logx=LOGX)
+                ax=ax, marker="o", logx=logx)
+        plt.legend()
+        ax.set_title(scores, fontsize=18)
+
+        plt.ylim(*ylims)
+        if fileName:
+            plt.savefig(fileName)
+        plt.show()
+        return plt.gcf()
+
+params_mlp = {
+    "alpha" : [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 10, 100],
+    "hidden_layer_sizes" : [(50,50), (5,5), (5,50), (50,5)],
+    #"solver" : ["adam","lbfgs"],
+    "activation" : ["tanh", "relu"]
+    }
+
+def plot_mlp(results, scores="score", fileName=None, params=params_mlp, ylims=YLIMS):
+    param_keys = list(params)
+    first_key = param_keys[0]
+    hls = param_keys[1]
+    rest = param_keys[2:]
+    res_by_hls = [ (results[results[hls]==hls_val], hls_val) for hls_val in params[hls]]
+    #display(res_by_hls)
+
+    plt.style.use('seaborn')
+    if isinstance(scores, str):
+        fig, ax = plt.subplots(figsize=(8,6))
+        for vals in tuple(itertools.product(*tuple(x for x in tuple(params.values())[2:]))):
+            filters = " & ".join([str(x)+' == "'+str(v)+'"' for x, v in zip(rest, vals)])
+            for line, hls_val in res_by_hls:
+                label = " / ".join([str(x) for x in vals]) + f" / {hls_val}"
+                line.query(filters).plot(
+                    x=first_key, y=scores, label=label,
+                    ax=ax, marker="o", logx=LOGX)
         plt.legend()
         ax.set_title(scores, fontsize=18)
 

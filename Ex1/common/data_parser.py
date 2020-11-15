@@ -111,23 +111,23 @@ def parse_congressional_voting(data_set):
 
     raise ValueError("Improper argument. Allowed arguments are lrn, sol, test")
 
-def parse_heart_disease(data_set = "sma"):        
+def parse_heart_disease(data_set = "multi"):        
     """imports the heart disease dataset.
 
     Raises: ValueError: invalid argument
 
     Returns: dataframe: pandas dataframe containing the requested dataset
     """
-    if data_set == "sma":
+    if data_set == "binary":
         df = pd.read_csv(HEART_DISEASE_DIR + "/heart.csv")
         assert df.size == HEART_DISEASE_SIZE
         return df
-    elif data_set == "big":
-        df = pd.read_csv(HEART_DISEASE_DIR + "/HEART_DISEASE.csv")
+    elif data_set == "multi":
+        df = pd.read_csv(HEART_DISEASE_DIR + "/Heart_Disease.csv")
         assert df.size == HEART_DISEASE_SIZE
         return df
 
-    raise ValueError("Improper argument. Allowed arguments are sma, big")
+    raise ValueError("Improper argument. Allowed arguments are binary, mulit")
 
 
 if __name__ == "__main__":
