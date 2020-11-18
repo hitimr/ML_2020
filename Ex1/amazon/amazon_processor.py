@@ -70,7 +70,7 @@ def PlotHist(df,ylabel,xlabel,title,savename,bins,size):
     plt.hist(df["Class"],bins,facecolor='g')
     plt.grid()
     name = "out/" + savename
-    plt.savefig(name+".pdf")
+    plt.savefig(name+".png")
 
 def Plot_preprocessing(df_raw, Feature_Selector, Scaler, Model,X):
     mpl.style.use('seaborn')
@@ -90,7 +90,7 @@ def Plot_preprocessing(df_raw, Feature_Selector, Scaler, Model,X):
         plt.title(titel)
         plt.legend()
         save = "out/kBest|PCA/" + Model + "_with_different_k_sclaer_"+ X + Feature_Selector
-        plt.savefig(save+".pdf")
+        plt.savefig(save+".png")
 
 def FindBestK_Scaler(df, model):
     df_best = df[ df['Model'] == model]
