@@ -9,6 +9,7 @@ import numpy as np
 
 from GD.LinearRegression import LinearRegression
 from common import DataParser
+import config as cfg
 
 
 def test_LinearRegression():
@@ -46,8 +47,43 @@ def test_initialize_w():
     for i in range(len(w0)):
         assert 4 == w0[i]+w1[i]*X[i][-2]
 
+def test_rss_vector():
+    lg = LinearRegression()
+
+    n = 10000
+    x = np.random.rand(n)
+    y = np.random.rand(n)
+    w0 = np.random.rand()
+    w1 = np.random.rand()
+
+    # Reference calculation by 
+    reference_sum = 0
+    for i in range(len(x)):
+        reference_sum += (y[i] - (w0 + w1*x[i]))**2
+
+    assert abs(reference_sum - lg.rss_vector(x,y,w0,w1)) < cfg.FP_TOLERANCE
 
 
+def test_rss():
+    lg = LinearRegression()
+
+    n = int(10**4)
+    m = int(10)
+    X = np.random.rand(m,n)
+    y = np.random.rand(n)
+    w0 = np.random.rand(m)
+    w1 = np.random.rand(m)
+
+    reference_sums = []
+    for j in range(m):
+        sum = 0
+        for i in range(n):
+            sum += (y[i] - (w0[j] + w1[j]*X[j][i]))**2
+        reference_sums.append(sum)
+    reference_sums = np.array(reference_sums)
+
+    rss_lg = lg.rss(X,y, w0, w1)
+    assert np.allclose(reference_sums, rss_lg, cfg.FP_TOLERANCE)
 
 if __name__ == "__main__":
-    test_initialize_w()
+    test_rss()
