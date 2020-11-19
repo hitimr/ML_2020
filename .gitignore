@@ -4,8 +4,7 @@
 .vscode/settings.json
 .DS_Store
 Ex1/heart/presentation
-Ex1/
-Ex0/**
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
