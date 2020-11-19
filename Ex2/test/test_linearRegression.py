@@ -65,25 +65,39 @@ def test_rss_vector():
 
 
 def test_rss():
-    lg = LinearRegression()
 
-    n = int(10**4)
-    m = int(10)
+    def runParameters(n, m):
+        lg = LinearRegression()
+        X = np.random.rand(m,n)
+        y = np.random.rand(n)
+        w0 = np.random.rand(m)
+        w1 = np.random.rand(m)
+
+        reference_sums = []
+        for j in range(m):
+            sum = 0
+            for i in range(n):
+                sum += (y[i] - (w0[j] + w1[j]*X[j][i]))**2
+            reference_sums.append(sum)
+        reference_sums = np.array(reference_sums)
+
+        rss_lg = lg.rss(X,y, w0, w1)
+        assert np.allclose(reference_sums, rss_lg, cfg.FP_TOLERANCE)
+
+    runParameters(10**4, 10)
+    runParameters(10**4, 1)
+
+
+def test_iterate():
+    n,m = 10**4, 10
+    lg = LinearRegression()
     X = np.random.rand(m,n)
     y = np.random.rand(n)
     w0 = np.random.rand(m)
     w1 = np.random.rand(m)
 
-    reference_sums = []
-    for j in range(m):
-        sum = 0
-        for i in range(n):
-            sum += (y[i] - (w0[j] + w1[j]*X[j][i]))**2
-        reference_sums.append(sum)
-    reference_sums = np.array(reference_sums)
+    lg.iterate(X, y, w0, w1)
 
-    rss_lg = lg.rss(X,y, w0, w1)
-    assert np.allclose(reference_sums, rss_lg, cfg.FP_TOLERANCE)
 
 if __name__ == "__main__":
-    test_rss()
+    test_iterate()

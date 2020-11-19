@@ -7,4 +7,4 @@ DATASET_TEST_HOUSEPRICES = PROJECT_ROOT + "test\\test_datasets\\test_housePrices
 
 
 
-FP_TOLERANCE = 1e-8 # Tolerance for floating point operations for unit tests
+FP_TOLERANCE = 1e-10 # Tolerance for floating point operations for unit tests

@@ -32,12 +32,14 @@ class LinearRegression():
         features
 
         x -> vector (size = n)
-        X -> Matrix (size = n x m)
+        X -> matrix (size = n x m)
 
     """
-    def __init__(self, metric="RSS"):
+    def __init__(self, metric="RSS", alpha=0.001):
         if metric == "RSS":
             self.costFunction = self.rss
+
+        self.alpha = alpha
 
     def fit(self, X, y):
         """Fit the model
@@ -51,11 +53,25 @@ class LinearRegression():
         self.initialize_w(X,y)   
         return
 
+    def iterate(self, X, y, w0, w1):
+
+        rss = self.rss(X, y, w0, w1)
+        grad_w0 = self.alpha*np.gradient(rss, w0)
+        grad_w1 = self.alpha*np.gradient(rss, w1)
+        
+        w0 = w0 - grad_w0
+        w1 = w1 - grad_w1
+
+        return w0, w1
+
+
     def rss_vector(self, x, y, w0, w1):
         """Calculate residual sum of squares for x being an array of size n.
         Original algorithm from lecture slides which was then optimized for
         performance The implemented algorithm is the one with the best runtime
         from bechmark_rss_vector.py
+
+        TODO: pull out dot-products as they dont change over iterations
 
         Args: x (np.array): x values y (np.array): y values w0 (float): offset
             w1 (float): slope
@@ -75,7 +91,7 @@ class LinearRegression():
         Returns: np.array: vector vectorcontaining m residua
         """        
         return np.asarray([
-            self.rss_vector(X[j].T, y, w0[j], w1[j]) 
+            self.rss_vector(X[j], y, w0[j], w1[j]) 
             for j in range(len(X))
             ])
         
@@ -130,19 +146,20 @@ class LinearRegression():
 
 
 if __name__ == "__main__":
-    reg = LinearRegression()
+    reg = LinearRegression(alpha=0.001)
     X, y = DataParser.parse_test_housePrices(splitData=True)
     X = X.to_numpy().transpose()
     y = y.to_numpy().flatten()
-
-    w0, w1 = reg.initialize_w(X, y)
-    
     x_vals = list(range(1,5))
-    y_vals = [w0[0] + w1[0]*x for x in x_vals]
     plt.scatter(X[0], y)
-    plt.plot(x_vals, y_vals)
-    #plt.show()
 
-    from sklearn.linear_model import LinearRegression
-    reg = LinearRegression()
-    pass
+    w0, w1 = reg.initialize_w(X, y) 
+
+
+    plt.plot(x_vals, [w0[0] + w1[0]*x for x in x_vals])
+
+    for i in range(10):
+        w0, w1 = reg.iterate(X, y, w0, w1)
+        #plt.plot(x_vals, [w0[0] + w1[0]*x for x in x_vals])
+
+    #plt.show()
