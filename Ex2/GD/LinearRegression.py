@@ -49,6 +49,7 @@ class LinearRegression():
 
     def rss_vector(self, x, y, w0, w1):
         """Calculate residual sum of squares for x being an array of size n.
+        Original algorithm from lecture slides which was then optimized for performance
         The implemented algorithm is the one with the best runtime from bechmark_rss_vector.py
 
         Args:
@@ -78,6 +79,17 @@ class LinearRegression():
         
 
     def initialize_w(self, X, y):
+        """Initialize w0 (offset) and w1 (slope).
+        Initial values are chosen by finding the smallest and largest x (x_min, x_max)
+        Then we do linear interpolation for f(x_min) and f(x_max)
+
+        Args:
+            X (np.matrix): Matrix of x values
+            y (np.array): y values
+
+        Returns:
+            np.array, np.array: w0 (list of offets), w1 (list of slopesslope)
+        """        
         self.check_Xy(X, y)
 
         w_0, w_1 = [], []
@@ -92,7 +104,7 @@ class LinearRegression():
             w_1.append(k)
             w_0.append(d)
 
-        return w_0, w_1
+        return np.array(w_0), np.array(w_1)
 
 
     def check_Xy(self, X, y):
