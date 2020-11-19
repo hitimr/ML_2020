@@ -7,6 +7,7 @@ sys.path.insert(0,parentdir)
 import config as cfg
 
 import pandas as pd
+import numpy as npß
 
 
 def parse_test_housePrices(splitData=False):
