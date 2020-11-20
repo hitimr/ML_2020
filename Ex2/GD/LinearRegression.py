@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from sklearn import linear_model
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
+
 # required for importin modules from other directories
 import os,sys,inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -35,35 +39,73 @@ class LinearRegression():
         X -> matrix (size = n x m)
 
     """
-    def __init__(self, metric="RSS", alpha=0.001):
+    w0 = []
+    w1 = []
+
+    def __init__(self, metric="RSS", alpha=0.0001, max_iter=1000):
         if metric == "RSS":
-            self.costFunction = self.rss
+            self.metric = self.rss_vector
 
         self.alpha = alpha
+        self.max_iter = max_iter
+        self.w0 = []
+        self.w1 = []
 
     def fit(self, X, y):
         """Fit the model
 
         Args: X (array-like): Training data of shape (n_samples, n_features) y
             (array-like): Target values
-        """   
-        X = X.transpose()
-        y = np.array(y).flatten()
-
-        self.initialize_w(X,y)   
-        return
-
-    def iterate(self, X, y, w0, w1):
-
-        rss = self.rss(X, y, w0, w1)
-        grad_w0 = self.alpha*np.gradient(rss, w0)
-        grad_w1 = self.alpha*np.gradient(rss, w1)
+        """
+        X, y = self.sanitizeInputXy(X, y)
         
-        w0 = w0 - grad_w0
-        w1 = w1 - grad_w1
+        w0, w1 = self.initialize_w(X, y)
+        for i in range(len(X)):
+            w0_i, w1_i = self.gradientDescend(X[i],y, w0[i], w1[i])
+            w0[i] = w0_i
+            w1[i] = w1_i
 
+        self.w0 = w0
+        self.w1 = w1
         return w0, w1
 
+    def predict(self, X):
+        # TODO add functionality for single sample
+        if len(w0) == 0:
+            raise(SystemError("Model is not fitted"))
+
+        if (len(w0) != len(X[0])) or (len(w1) != len(X[0])):
+            raise(ValueError("Dimensions of X does not match w0 and w1"))
+
+        n_features = len(w0)
+        n_samples = len(X)
+
+        y = []
+        for x in X:
+            y.append( np.average(w0 + x*w1))
+        return np.array(y)
+
+    def gradientDescend(self, x, y, w0, w1):
+        iter_cnt = 0
+        error = self.metric(x, y, w0, w1)
+        while(True):  
+            iter_cnt += 1     
+            grad_w0 = self.alpha*error / w0
+            grad_w1 = self.alpha*error / w1
+            w0 = w0 - grad_w0
+            w1 = w1 - grad_w1
+            new_error = self.metric(x, y, w0, w1)
+
+            if new_error > error:
+                w0 = w0 + grad_w0
+                w1 = w1 + grad_w1
+                return w0, w1
+
+            if iter_cnt > self.max_iter:
+                return w0, w1            
+
+
+ 
 
     def rss_vector(self, x, y, w0, w1):
         """Calculate residual sum of squares for x being an array of size n.
@@ -84,9 +126,6 @@ class LinearRegression():
     def rss(self, X, y, w0, w1):
         """Calculate the residual sum of squares for X being a Matrix of size 
         n x m
-
-        Args: X (np.matrix): Matrix of x values y (np.array): y values w0
-            (np.array): offsets (size = m) w1 (np.array): slopes  (size = m)
 
         Returns: np.array: vector vectorcontaining m residua
         """        
@@ -122,6 +161,28 @@ class LinearRegression():
 
         return np.array(w_0), np.array(w_1)
 
+    def sanitizeInputXy(self, X, y):
+        # check if input is works. If so just return it
+        try:
+            self.check_Xy(X,y)
+            return X, y
+
+        except:
+
+            # Something is not algrigh with the input. Lets try to fix it
+            if isinstance(X, pd.DataFrame):
+                X = X.to_numpy().transpose()
+
+            else:
+                X = np.array(X)
+            if isinstance(y, pd.DataFrame):
+                y = y.to_numpy().flatten()
+            else:
+                y = np.array(y)
+            
+            self.check_Xy(X,y)
+            return X,y
+
 
     def check_Xy(self, X, y):
         """ Convenience function.
@@ -143,23 +204,33 @@ class LinearRegression():
         assert len(X.shape) == 2    # X must be 2D
         assert len(X[0]) == len(y)  # dimensions must match
 
-
-
 if __name__ == "__main__":
-    reg = LinearRegression(alpha=0.001)
-    X, y = DataParser.parse_test_housePrices(splitData=True)
-    X = X.to_numpy().transpose()
-    y = y.to_numpy().flatten()
-    x_vals = list(range(1,5))
-    plt.scatter(X[0], y)
+    alpha = 0.0001
 
-    w0, w1 = reg.initialize_w(X, y) 
+    
+    n_samples, n_features = 100, 2
+    rng = np.random.RandomState(0)
+    X = np.array([np.linspace(0,1, n_samples) for i in range(n_features)])
+    y = np.array(10*X[0] + rng.rand(n_samples)*1)
+    X = X.T
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1 )
 
 
-    plt.plot(x_vals, [w0[0] + w1[0]*x for x in x_vals])
+    my_reg = LinearRegression(alpha=alpha)
+    w0, w1 = my_reg.fit(X_train.T, y_train)
 
-    for i in range(10):
-        w0, w1 = reg.iterate(X, y, w0, w1)
-        #plt.plot(x_vals, [w0[0] + w1[0]*x for x in x_vals])
 
-    #plt.show()
+    
+    sk_reg = linear_model.SGDRegressor(alpha=alpha)
+    sk_reg.fit(X_train,y_train)
+
+    my_y_pred = my_reg.predict(X_test)
+    sk_y_pred = sk_reg.predict(X_test)
+
+
+    print("R2 SK Learn:", r2_score(y_test, sk_y_pred))
+    print("R2  ML 2020:", r2_score(y_test, my_y_pred))
+    
+
+

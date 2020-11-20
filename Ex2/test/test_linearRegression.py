@@ -88,16 +88,6 @@ def test_rss():
     runParameters(10**4, 1)
 
 
-def test_iterate():
-    n,m = 10**4, 10
-    lg = LinearRegression()
-    X = np.random.rand(m,n)
-    y = np.random.rand(n)
-    w0 = np.random.rand(m)
-    w1 = np.random.rand(m)
-
-    lg.iterate(X, y, w0, w1)
-
 
 if __name__ == "__main__":
     test_iterate()
