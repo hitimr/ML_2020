@@ -8,6 +8,9 @@ import pytest
 import numpy as np
 
 from GD.LinearRegression import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
+
 from common import DataParser
 import config as cfg
 
@@ -15,6 +18,20 @@ import config as cfg
 def test_LinearRegression():
     lg = LinearRegression()
 
+def test_fit():
+    n_samples, n_features = 100, 10
+    rng = np.random.RandomState(69)
+    X = np.array([np.linspace(0,1, n_samples) for i in range(n_features)])
+    y = np.array(10*X[0] + rng.rand(n_samples)*1)
+    X = X.T
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+    reg = LinearRegression(alpha=0.001)
+    reg.fit(X_train, y_train)
+    y_pred = reg.predict(X_test)
+    r2_ = r2_score(y_test, y_pred)
+    print(f"R2 score: {r2}")
 
 def test_check_Xy():
     lg = LinearRegression()
@@ -90,4 +107,4 @@ def test_rss():
 
 
 if __name__ == "__main__":
-    test_iterate()
+    test_fit()

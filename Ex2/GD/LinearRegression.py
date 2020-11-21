@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from time import time
 
 from sklearn import linear_model
 from sklearn.model_selection import train_test_split
@@ -42,7 +43,7 @@ class LinearRegression():
     w0 = []
     w1 = []
 
-    def __init__(self, metric="RSS", alpha=0.0001, max_iter=1000):
+    def __init__(self, metric="RSS", alpha=0.001, max_iter=1000):
         if metric == "RSS":
             self.metric = self.rss_vector
 
@@ -67,45 +68,42 @@ class LinearRegression():
 
         self.w0 = w0
         self.w1 = w1
-        return w0, w1
+        return self
 
     def predict(self, X):
         # TODO add functionality for single sample
-        if len(w0) == 0:
+        if len(self.w0) == 0:
             raise(SystemError("Model is not fitted"))
 
-        if (len(w0) != len(X[0])) or (len(w1) != len(X[0])):
+        if (len(self.w0) != len(X[0])) or (len(self.w1) != len(X[0])):
             raise(ValueError("Dimensions of X does not match w0 and w1"))
 
-        n_features = len(w0)
+        n_features = len(self.w0)
         n_samples = len(X)
 
         y = []
         for x in X:
-            y.append( np.average(w0 + x*w1))
+            y.append( np.average(self.w0 + x*self.w1))
         return np.array(y)
 
     def gradientDescend(self, x, y, w0, w1):
         iter_cnt = 0
         error = self.metric(x, y, w0, w1)
+        n = len(x)
         while(True):  
             iter_cnt += 1     
-            grad_w0 = self.alpha*error / w0
-            grad_w1 = self.alpha*error / w1
+
+            
+            grad_w0 = self.alpha*(2*n*w0 - 2*sum(y) + 2*w1*sum(x))
+            grad_w1 = self.alpha*(2*w1*np.dot(x,x) - 2*np.dot(x,y) + 2*w0*sum(x))
             w0 = w0 - grad_w0
             w1 = w1 - grad_w1
             new_error = self.metric(x, y, w0, w1)
 
-            if new_error > error:
-                w0 = w0 + grad_w0
-                w1 = w1 + grad_w1
-                return w0, w1
-
+            # stop if we reach the limit of iterations
             if iter_cnt > self.max_iter:
                 return w0, w1            
 
-
- 
 
     def rss_vector(self, x, y, w0, w1):
         """Calculate residual sum of squares for x being an array of size n.
@@ -147,7 +145,7 @@ class LinearRegression():
         """        
         self.check_Xy(X, y)
 
-        w_0, w_1 = [], []
+        w0, w1 = [], []
         for x in X:
             i_0 = x.argmin() 
             i_1 = x.argmax()
@@ -156,10 +154,11 @@ class LinearRegression():
             k = (y[i_1] - y[i_0]) / (x[i_1] - x[i_0])
             d = y[i_0] - k*x[i_0]
 
-            w_1.append(k)
-            w_0.append(d)
+            w1.append(k)
+            w0.append(d)
 
-        return np.array(w_0), np.array(w_1)
+        
+        return np.array(w0), np.array(w1)
 
     def sanitizeInputXy(self, X, y):
         # check if input is works. If so just return it
@@ -205,32 +204,41 @@ class LinearRegression():
         assert len(X[0]) == len(y)  # dimensions must match
 
 if __name__ == "__main__":
-    alpha = 0.0001
+    alpha = 0.001
 
     
-    n_samples, n_features = 100, 2
+    n_samples, n_features = 500, 10
+    noise = 0.1
     rng = np.random.RandomState(0)
     X = np.array([np.linspace(0,1, n_samples) for i in range(n_features)])
-    y = np.array(10*X[0] + rng.rand(n_samples)*1)
+    y = np.array(10*X[0] + 100*X[1])*(1 + rng.rand(n_samples)*noise)
+
     X = X.T
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1 )
 
 
     my_reg = LinearRegression(alpha=alpha)
-    w0, w1 = my_reg.fit(X_train.T, y_train)
+
+    start_time = time()
+    my_reg.fit(X_train.T, y_train)
+    end_time = time()
+    time_my = end_time - start_time
 
 
     
     sk_reg = linear_model.SGDRegressor(alpha=alpha)
+    start_time = time()
     sk_reg.fit(X_train,y_train)
+    end_time = time()
+    time_sk = end_time - start_time
 
-    my_y_pred = my_reg.predict(X_test)
-    sk_y_pred = sk_reg.predict(X_test)
+    y_pred_my = my_reg.predict(X_test)
+    y_pred_sk = sk_reg.predict(X_test)
 
 
-    print("R2 SK Learn:", r2_score(y_test, sk_y_pred))
-    print("R2  ML 2020:", r2_score(y_test, my_y_pred))
+    print(f"R2 SK Learn: {r2_score(y_test, y_pred_sk)}, time = {time_sk}")
+    print(f"R2  ML 2020: {r2_score(y_test, y_pred_my)}, time = {time_my}" )
     
 
 
