@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from time import time
+from multiprocessing import Pool
 
 from sklearn import linear_model
 from sklearn.model_selection import train_test_split
@@ -43,12 +44,13 @@ class LinearRegression():
     w0 = []
     w1 = []
 
-    def __init__(self, metric="RSS", alpha=0.001, max_iter=1000):
+    def __init__(self, metric="RSS", alpha=0.0001, max_iter=1000, thread_cnt=8):
         if metric == "RSS":
             self.metric = self.rss_vector
 
         self.alpha = alpha
         self.max_iter = max_iter
+        self.thread_cnt = thread_cnt
         self.w0 = []
         self.w1 = []
 
@@ -61,14 +63,59 @@ class LinearRegression():
         X, y = self.sanitizeInputXy(X, y)
         
         w0, w1 = self.initialize_w(X, y)
+        self.y = y
         for i in range(len(X)):
-            w0_i, w1_i = self.gradientDescend(X[i],y, w0[i], w1[i])
+            w0_i, w1_i = self.gradientDescend(X[i], w0[i], w1[i])
             w0[i] = w0_i
             w1[i] = w1_i
 
         self.w0 = w0
         self.w1 = w1
         return self
+        
+    def gradientDescend(self, x, w0, w1):
+        iter_cnt = 0
+
+        n = len(x)
+        dot_xx = np.dot(x,x)
+        dot_xy = np.dot(x,self.y)
+        sum_x = sum(x)
+        sum_y = sum(self.y)
+
+        while(True):  
+            iter_cnt += 1     
+            
+            grad_w0 = 2*self.alpha*(n*w0 + w1*sum_x - sum_y)
+            grad_w1 = 2*self.alpha*(w1*dot_xx + w0*sum_x - dot_xy)
+            w0 = w0 - grad_w0
+            w1 = w1 - grad_w1
+
+            # stop if we reach the limit of iterations
+            if iter_cnt > self.max_iter:
+                return w0, w1         
+
+    def gradientDescend_matrix(self, args):
+        X, w0, w1 = args[0], args[1], args[2]
+        iter_cnt = 0
+        n = len(X[0])
+        dot_xx = np.matmul(X.T,X)
+        dot_xy = np.dot(X,y)
+        sum_x = np.array([sum(x) for x in X])
+        sum_y = sum(self.y)
+
+        while(True):  
+            iter_cnt += 1     
+            
+            grad_w0 = 2*self.alpha*(n*w0 + w1*sum_x - sum_y)
+            grad_w1 = 2*self.alpha*(np.dot(dot_xx, w1) + np.dot(sum_x, w0) - dot_xy)
+            w0 = w0 - grad_w0
+            w1 = w1 - grad_w1
+
+            # stop if we reach the limit of iterations
+            if iter_cnt > self.max_iter:
+                return w0, w1             
+
+
 
     def predict(self, X):
         # TODO add functionality for single sample
@@ -85,25 +132,6 @@ class LinearRegression():
         for x in X:
             y.append( np.average(self.w0 + x*self.w1))
         return np.array(y)
-
-    def gradientDescend(self, x, y, w0, w1):
-        iter_cnt = 0
-        error = self.metric(x, y, w0, w1)
-        n = len(x)
-        while(True):  
-            iter_cnt += 1     
-
-            
-            grad_w0 = self.alpha*(2*n*w0 - 2*sum(y) + 2*w1*sum(x))
-            grad_w1 = self.alpha*(2*w1*np.dot(x,x) - 2*np.dot(x,y) + 2*w0*sum(x))
-            w0 = w0 - grad_w0
-            w1 = w1 - grad_w1
-            new_error = self.metric(x, y, w0, w1)
-
-            # stop if we reach the limit of iterations
-            if iter_cnt > self.max_iter:
-                return w0, w1            
-
 
     def rss_vector(self, x, y, w0, w1):
         """Calculate residual sum of squares for x being an array of size n.
@@ -207,11 +235,15 @@ if __name__ == "__main__":
     alpha = 0.001
 
     
-    n_samples, n_features = 500, 10
-    noise = 0.1
+    n_samples, n_features = 1000, 10
+    noise = 0.15
     rng = np.random.RandomState(0)
     X = np.array([np.linspace(0,1, n_samples) for i in range(n_features)])
-    y = np.array(10*X[0] + 100*X[1])*(1 + rng.rand(n_samples)*noise)
+
+    y = np.zeros(n_samples)
+    for i in range(n_features):
+        y += X[i]*(i+1)
+    y = y * (1 + rng.rand(n_samples)*noise) # add noise
 
     X = X.T
 
