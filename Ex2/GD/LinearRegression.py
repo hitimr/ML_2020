@@ -73,7 +73,7 @@ class LinearRegression():
             w0_i, w1_i = self.gradientDescend(X[i], w0[i], w1[i])
             if np.isnan(w0_i) or np.isnan(w0_i):
                 raise SystemError("Gradient is diverging! try to use smaller alpha")
-            
+
             w0[i] = w0_i
             w1[i] = w1_i
 
@@ -250,10 +250,10 @@ class LinearRegression():
         assert len(X[0]) == len(y)  # dimensions must match
 
 if __name__ == "__main__":
-    alpha = 0.01
+    alpha = 0.0001
 
     
-    n_samples, n_features = 500, 10
+    n_samples, n_features = 5000, 10
     noise = 0.15
     rng = np.random.RandomState(0)
     X = np.array([np.linspace(0,1, n_samples) for i in range(n_features)])
