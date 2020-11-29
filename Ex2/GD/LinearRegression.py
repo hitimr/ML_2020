@@ -155,8 +155,6 @@ class LinearRegression():
         performance The implemented algorithm is the one with the best runtime
         from bechmark_rss_vector.py
 
-        TODO: pull out dot-products as they dont change over iterations
-
         Args: x (np.array): x values y (np.array): y values w0 (float): offset
             w1 (float): slope
 
