@@ -91,6 +91,8 @@ def test_rss_vector():
     for i in range(len(x)):
         reference_sum += (y[i] - (w0 + w1*x[i]))**2
 
+    lg._dot_yy = np.dot(y,y)
+    lg._sum_y = np.sum(y)
     assert abs(reference_sum - lg.rss_vector(x,y,w0,w1)) < cfg.FP_TOLERANCE
 
 

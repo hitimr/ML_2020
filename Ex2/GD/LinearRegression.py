@@ -96,6 +96,7 @@ class LinearRegression():
         sum_x = sum(x)
         sum_y = sum(self.y)
 
+        # Iteration for Gradient descend
         while(True):  
             iter_cnt += 1     
             
@@ -109,6 +110,7 @@ class LinearRegression():
                 return w0, w1         
 
     def gradientDescend_matrix(self, args):
+        # Experimantal implementation by solving everything using matrix ops
         X, w0, w1 = args[0], args[1], args[2]
         iter_cnt = 0
         n = len(X[0])
@@ -139,8 +141,6 @@ class LinearRegression():
         if (len(self.w0) != len(X[0])) or (len(self.w1) != len(X[0])):
             raise(ValueError("Dimensions of X does not match w0 and w1"))
 
-
-
         y = []
         for x in X:
             y.append( np.average(self.w0 + x*self.w1, weights=self.weigths))
@@ -159,15 +159,17 @@ class LinearRegression():
 
         Returns: float: residual
         """        
-        return np.dot(y,y) + w1*w1*np.dot(x,x) - 2*w1*np.dot(x,y) + len(x)*w0*w0 \
-        - 2*w0*np.sum(y) + 2*w0*w1*sum(x)
+        return self._dot_yy + w1*w1*np.dot(x,x) - 2*w1*np.dot(x,y) + len(x)*w0*w0 \
+        - 2*w0*self._sum_y + 2*w0*w1*sum(x)
 
     def rss(self, X, y, w0, w1):
         """Calculate the residual sum of squares for X being a Matrix of size 
         n x m
 
         Returns: np.array: vector vectorcontaining m residua
-        """        
+        """  
+        self._dot_yy = np.dot(y,y)
+        self._sum_y = np.sum(y)
         return np.asarray([
             self.rss_vector(X[j], y, w0[j], w1[j]) 
             for j in range(len(X))
