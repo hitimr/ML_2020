@@ -18,6 +18,19 @@ import config as cfg
 def test_LinearRegression():
     lg = LinearRegression()
 
+    lg = LinearRegression(alpha=0.123)
+    assert lg.alpha == 0.123
+
+    lg = LinearRegression(max_iter=12345)
+    assert lg.max_iter == 12345
+
+    lg =  LinearRegression(weigths="residual")
+    assert lg.weigth_mode == "residual"
+
+    with pytest.raises(Exception): LinearRegression(weigths="wrong argument")
+
+
+
 def test_fit():
     n_samples, n_features = 100, 10
     rng = np.random.RandomState(69)
@@ -30,7 +43,7 @@ def test_fit():
     reg = LinearRegression(alpha=0.001)
     reg.fit(X_train, y_train)
     y_pred = reg.predict(X_test)
-    r2_ = r2_score(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
     print(f"R2 score: {r2}")
 
 def test_check_Xy():

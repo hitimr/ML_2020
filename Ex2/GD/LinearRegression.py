@@ -6,6 +6,7 @@ from multiprocessing import Pool
 
 from sklearn import linear_model
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import normalize
 from sklearn.metrics import r2_score
 
 # required for importin modules from other directories
@@ -44,15 +45,19 @@ class LinearRegression():
     w0 = []
     w1 = []
 
-    def __init__(self, metric="RSS", alpha=0.0001, max_iter=1000, thread_cnt=8):
+    def __init__(self, metric="RSS", alpha=0.0001, max_iter=1000, weigths="uniform"):
         if metric == "RSS":
             self.metric = self.rss_vector
 
         self.alpha = alpha
+
+        assert max_iter > 0 # Error: Invalid argument for max_iter
         self.max_iter = max_iter
-        self.thread_cnt = thread_cnt
         self.w0 = []
         self.w1 = []
+        
+        assert weigths == "uniform" or weigths == "residual"    # Error invalid argument for weigths
+        self.weigth_mode = weigths
 
     def fit(self, X, y):
         """Fit the model
@@ -70,8 +75,17 @@ class LinearRegression():
             w1[i] = w1_i
 
         self.w0 = w0
-        self.w1 = w1
+        self.w1 = w1       
+
+        if self.weigth_mode != "uniform":   
+            weigths = 1.0 / self.rss(X, y, w0, w1)      
+            self.weigths = weigths / np.sqrt(np.sum(weigths**2)) # Normalize weigths
+
+        else:
+            self.weigths = np.ones(len(w0), dtype=float)
+
         return self
+
         
     def gradientDescend(self, x, w0, w1):
         iter_cnt = 0
@@ -125,12 +139,11 @@ class LinearRegression():
         if (len(self.w0) != len(X[0])) or (len(self.w1) != len(X[0])):
             raise(ValueError("Dimensions of X does not match w0 and w1"))
 
-        n_features = len(self.w0)
-        n_samples = len(X)
+
 
         y = []
         for x in X:
-            y.append( np.average(self.w0 + x*self.w1))
+            y.append( np.average(self.w0 + x*self.w1, weights=self.weigths))
         return np.array(y)
 
     def rss_vector(self, x, y, w0, w1):
@@ -207,8 +220,8 @@ class LinearRegression():
             else:
                 y = np.array(y)
             
-            self.check_Xy(X,y)
-            return X,y
+            self.check_Xy(X.T,y)
+            return X.T,y
 
 
     def check_Xy(self, X, y):
@@ -232,10 +245,10 @@ class LinearRegression():
         assert len(X[0]) == len(y)  # dimensions must match
 
 if __name__ == "__main__":
-    alpha = 0.001
+    alpha = 0.0001
 
     
-    n_samples, n_features = 1000, 10
+    n_samples, n_features = 500, 10
     noise = 0.15
     rng = np.random.RandomState(0)
     X = np.array([np.linspace(0,1, n_samples) for i in range(n_features)])
@@ -250,10 +263,10 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1 )
 
 
-    my_reg = LinearRegression(alpha=alpha)
+    my_reg = LinearRegression(alpha=alpha, weigths="residual")
 
     start_time = time()
-    my_reg.fit(X_train.T, y_train)
+    my_reg.fit(X_train, y_train)
     end_time = time()
     time_my = end_time - start_time
 
