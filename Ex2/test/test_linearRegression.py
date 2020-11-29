@@ -32,7 +32,7 @@ def test_LinearRegression():
 
 
 def test_fit():
-    n_samples, n_features = 100, 10
+    n_samples, n_features = 500, 10
     rng = np.random.RandomState(69)
     X = np.array([np.linspace(0,1, n_samples) for i in range(n_features)])
     y = np.array(10*X[0] + rng.rand(n_samples)*1)
@@ -45,6 +45,14 @@ def test_fit():
     y_pred = reg.predict(X_test)
     r2 = r2_score(y_test, y_pred)
     print(f"R2 score: {r2}")
+
+    # alpha too big
+    reg = LinearRegression(alpha=1)
+    with pytest.raises(Exception): reg.fit(X_train, y_train)
+
+
+
+
 
 def test_check_Xy():
     lg = LinearRegression()
