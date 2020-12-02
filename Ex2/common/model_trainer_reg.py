@@ -15,7 +15,7 @@ class ModelTrainer():
     sklearn_model = object
     best_result = pd.DataFrame
 
-    def __init__(self, sklearn_model, params:dict, row_data_data, row_data_target, Varerror = False, Error = False, f_eval=accuracy_score, rmse_eval = mean_squared_error,  CFeature = train_test_split, CV = KFold, LC = learning_curve, thread_cnt=8):
+    def __init__(self, sklearn_model, params:dict, row_data_data, row_data_target, Varerror = False, Error = False,learning_curve = learning_curve, f_eval=accuracy_score, rmse_eval = mean_squared_error,  CFeature = train_test_split, CV = KFold, LC = learning_curve, thread_cnt=8):
         """Initialize the trainer
 
         Args:
@@ -41,6 +41,7 @@ class ModelTrainer():
         self.CFeature = CFeature
         self.CV = CV
         self.LC = LC
+        self.learning_curve = learning_curve
         self.Varerror = Varerror
         #self.y_row = np.array(y_test).ravel()
         self.f_eval = f_eval
@@ -129,8 +130,41 @@ class ModelTrainer():
     def TTSplit(self, perc = 0.4, r_split = 42):
         self.x_train, self.x_test, self.y_train, self.y_test = self.CFeature(self.row_data_data, self.row_data_target, test_size=perc, random_state=r_split)
 
-    def LC_plot(self):
-        self.LC(self.sklearn_model, self.x_train, self.y_test)
+    def plot_learning_curve(self, model, title, axes=None, ylim=None, cv=None, n_jobs=None, train_sizes=np.linspace(.1, 1.0, 5)):
+        #model = self.sklearn_model(**parameter_set)
+        train_sizes, train_scores, test_scores, fit_times = self.learning_curve(model(), self.row_data_data, self.row_data_target, cv=cv, n_jobs=self.thread_cnt, train_sizes=train_sizes, return_times=True)
+
+        plt.title(title)
+        if ylim is not None:
+            plt.ylim(*ylim)
+        plt.xlabel("Training examples")
+        plt.ylabel("Score")
+
+        train_scores_mean = np.mean(train_scores, axis=1)
+        train_scores_std = np.std(train_scores, axis=1)
+        test_scores_mean = np.mean(test_scores, axis=1)
+        test_scores_std = np.std(test_scores, axis=1)
+        fit_times_mean = np.mean(fit_times, axis=1)
+        fit_times_std = np.std(fit_times, axis=1)
+
+        # Plot learning curve
+        plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                                train_scores_mean + train_scores_std, alpha=0.1,
+                                color="r")
+        plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                                test_scores_mean + test_scores_std, alpha=0.1,
+                                color="g")
+
+        plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
+                        label="Training score")
+        plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
+                        label="Cross-validation score")
+        plt.legend(loc="best")
+        plt.grid()
+        return plt
+
+
+
 
 
     @property
@@ -179,7 +213,7 @@ if __name__ == "__main__":
 
     from sklearn.preprocessing import StandardScaler
     from sklearn.model_selection import KFold
-    from sklearn.model_selection import train_test_split
+    from sklearn.model_selection import train_test_split, ShuffleSplit
     from sklearn.metrics import accuracy_score
     from sklearn.metrics import r2_score, mean_squared_log_error
     from sklearn.datasets import load_iris
@@ -200,14 +234,18 @@ if __name__ == "__main__":
     scaler.fit(iris_data)
     iris_data = scaler.transform(iris_data)
 
+    title = "Learning_Curves_(SGD_Sklearn)"
+    cv = ShuffleSplit(n_splits=10, test_size=0.2, random_state=0)
+
 
     #modeltrainer = ModelTrainer(DecisionTreeRegressor, params, iris_data, iris_target,mean_squared_log_error, "RMLE",  r2_score)
-    modeltrainer = ModelTrainer(DecisionTreeRegressor, params, iris_data, iris_target,mean_squared_log_error, "RMLE")#, r2_score)
-    #modeltrainer.TTSplit(perc = 0.8)
+    modeltrainer = ModelTrainer(DecisionTreeRegressor, params, iris_data, iris_target)#, r2_score)
+    modeltrainer.TTSplit(perc = 0.8)
     modeltrainer.CV_fold(k = 4)
 
     modeltrainer.train()
     res = modeltrainer.result
     print(res)
+    #modeltrainer.plot_learning_curve(title = title, cv = cv)
     #modeltrainer.LC_plot()
     #modeltrainer.save_result("common/iris_result.csv")
