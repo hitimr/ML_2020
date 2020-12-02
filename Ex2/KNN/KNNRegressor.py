@@ -19,6 +19,8 @@ import config
 from common import DataParser
 from common.runtime import runtime
 
+# https://stackoverflow.com/questions/8804830/python-multiprocessing-picklingerror-cant-pickle-type-function
+
 class KNNRegressor():
     """
     Custom KNN Regressor implementation.
@@ -64,6 +66,7 @@ class KNNRegressor():
             self._params["n_neighbors"] = n_neighbors
             self._params["p"] = p
             self._params["weights"] = weights
+            self._params["algorithm"] = "brute"
 
         self._dist_func = dist_func
         self.KNN_DEBUG = debug
@@ -107,11 +110,8 @@ class KNNRegressor():
 
         Really just stores the data...
         """
-        X, y = self.sanitizeInputXy(
-            X, y)  # need to actually rebind X, y here :D --> use return values
-        self._training_x = X
-        self._training_y = y
-        self._num_samples = len(y)
+        self._training_x, self._training_y = self.sanitizeInputXy(X, y) 
+        self._num_samples = len(self._training_y)
 
         if self._num_samples < self._params["n_neighbors"]:
             print(
@@ -127,8 +127,7 @@ class KNNRegressor():
             return X, y
 
         except:
-
-            print("Trying to fix...")
+            #print("Trying to fix...")
             # Something is not algrigh with the input. Lets try to fix it
             if isinstance(X, pd.DataFrame):
                 X = X.to_numpy()
@@ -200,15 +199,16 @@ class KNNRegressor():
             print(self._params)
 
         # should be at least 2D np.arrays --> so matrices
-        if isinstance(self._training_x, pd.DataFrame):
-            diff = self._training_x.to_numpy()
-        else:
-            diff = self._training_x
-        if isinstance(X, pd.DataFrame):
-            diff = diff - X.to_numpy()[:, np.newaxis, :]
-        else:
-            diff = diff - X[:, np.newaxis, :]
+        # if isinstance(self._training_x, pd.DataFrame):
+        #     diff = self._training_x.to_numpy()
+        # else:
+        #     diff = self._training_x
+        # if isinstance(X, pd.DataFrame):
+        #     diff = diff - X.to_numpy()[:, np.newaxis, :]
+        # else:
+        #     diff = diff - X[:, np.newaxis, :]
 
+        diff = self._training_x - X[:, np.newaxis, :]
         distances = self._dist_func(diff, ord=self._params["p"], axis=2)
         neighbors = np.argpartition(distances, n_neighbors)[:,:n_neighbors]
         if self.KNN_DEBUG:
@@ -240,17 +240,19 @@ class KNNRegressor():
         if self._params["weights"] is None or self._params["weights"] is "uniform":
             if self.KNN_DEBUG:
                 print(self._params["weights"])
-            print("neighbors")
-            print(neighbors.dtype)
-            print(neighbors)
+                print("neighbors")
+                print(neighbors.dtype)
+                print(neighbors)
             # y = np.mean(sorted[:, :n_neighbors], axis=1)
             axis = 0
-            print(f"subset (taken from axis={axis}):")
             subset = []
             for sample_neighbors in neighbors:
                 subset.append(np.take_along_axis(self._training_y, sample_neighbors, axis=axis))
             subset = np.array(subset)
-            print(subset)
+
+            if self.KNN_DEBUG:
+                print(f"subset (taken from axis={axis}):")
+                print(subset)
             y = np.mean(subset, axis=1)
 
         if ret_distances:
