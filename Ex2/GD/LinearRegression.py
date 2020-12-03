@@ -19,190 +19,68 @@ sys.path.insert(0,parentdir)
 import config
 from common import DataParser
 
-
-
-
 class LinearRegression():
-    """
-    Custom Classifier for linear Regression.
-
-    The basic structure and methods used are similar to the models provided by
-    sklearn to ensure compatibility for our model trainer. The actual logic is
-    implemented from scratch except baisc operations such as matrix/vector
-    operations   
-
-    fit() will try to work with as many types of arguments as possible (list,
-    DataFrame, arrays, etc) and tries to convert them accordingly. All
-    subsequent calculations require numpy data-structures
-
-    A note about naming convention: n -> number of samples m -> number of
-        features
-
-        x -> vector (size = n)
-        X -> matrix (size = n x m)
-
-    """
-    w0 = []
-    w1 = []
-
-    def __init__(self, metric="RSS", alpha=0.0001, max_iter=1000, weigths="uniform"):
-        if metric == "RSS":
-            self.metric = self.rss_vector
+    def __init__(self, alpha=0.0001, max_iter=1000):
 
         self.alpha = alpha
-
         assert max_iter > 0 # Error: Invalid argument for max_iter
         self.max_iter = max_iter
-        self.w0 = []
-        self.w1 = []
-        
-        assert weigths == "uniform" or weigths == "residual"    # Error invalid argument for weigths
-        self.weigth_mode = weigths
+        self.c = 0
+        self.w = np.array([])
+
 
     def fit(self, X, y):
-        """Fit the model
+        X = np.array(X)
+        y = np.array(y)
+        c, w = self.initial_w(X, y)
 
-        Args: X (array-like): Training data of shape (n_samples, n_features) y
-            (array-like): Target values
-        """
-        X, y = self.sanitizeInputXy(X, y)
-        
-        w0, w1 = self.initialize_w(X, y)
         self.y = y
-        for i in range(len(X)):
-            w0_i, w1_i = self.gradientDescend(X[i], w0[i], w1[i])
-            if np.isnan(w0_i) or np.isnan(w0_i):
-                raise SystemError("Gradient is diverging! try to use smaller alpha")
 
-            w0[i] = w0_i
-            w1[i] = w1_i
+        n = float(len(X[0]))
+        X = X.T
+        iter_cnt = 0
+        while(True):
+            residual = y - np.dot(w, X) - c
 
-        self.w0 = w0
-        self.w1 = w1       
+            grad_w =  - 2.0 / n * np.dot(X, residual)
+            grad_c =  - 2.0 / n * sum(residual)
 
-        if self.weigth_mode != "uniform":   
-            weigths = 1.0 / self.rss(X, y, w0, w1)      
-            self.weigths = weigths / np.sqrt(np.sum(weigths**2)) # Normalize weigths
+            # update simulatinously
+            w = w - self.alpha * grad_w          
+            c = c - self.alpha * grad_c
 
-        else:
-            self.weigths = np.ones(len(w0), dtype=float)
+            iter_cnt += 1
+            if iter_cnt >= self.max_iter:
+                break
+
+            # TODO: stop diverging models            
+            #if np.isnan(w0_i) or np.isnan(w0_i):
+                #raise SystemError("Gradient is diverging! try to use smaller alpha")
+
+        self.c = c
+        self.w = w
 
         return self
 
-        
-    def gradientDescend(self, x, w0, w1):
-        iter_cnt = 0
-
-        n = len(x)
-        dot_xx = np.dot(x,x)
-        dot_xy = np.dot(x,self.y)
-        sum_x = sum(x)
-        sum_y = sum(self.y)
-
-        # Iteration for Gradient descend
-        while(True):  
-            iter_cnt += 1     
-            
-            grad_w0 = 2*self.alpha*(n*w0 + w1*sum_x - sum_y)
-            grad_w1 = 2*self.alpha*(w1*dot_xx + w0*sum_x - dot_xy)
-            w0 = w0 - grad_w0
-            w1 = w1 - grad_w1
-
-            # stop if we reach the limit of iterations
-            if iter_cnt > self.max_iter:
-                return w0, w1         
-
-    def gradientDescend_matrix(self, args):
-        # Experimantal implementation by solving everything using matrix ops
-        X, w0, w1 = args[0], args[1], args[2]
-        iter_cnt = 0
-        n = len(X[0])
-        dot_xx = np.matmul(X.T,X)
-        dot_xy = np.dot(X,y)
-        sum_x = np.array([sum(x) for x in X])
-        sum_y = sum(self.y)
-
-        while(True):  
-            iter_cnt += 1     
-            
-            grad_w0 = 2*self.alpha*(n*w0 + w1*sum_x - sum_y)
-            grad_w1 = 2*self.alpha*(np.dot(dot_xx, w1) + np.dot(sum_x, w0) - dot_xy)
-            w0 = w0 - grad_w0
-            w1 = w1 - grad_w1
-
-            # stop if we reach the limit of iterations
-            if iter_cnt > self.max_iter:
-                return w0, w1             
-
-
-
-    def predict(self, X):
-        # TODO add functionality for single sample
-        if len(self.w0) == 0:
-            raise(SystemError("Model is not fitted"))
-
-        if (len(self.w0) != len(X[0])) or (len(self.w1) != len(X[0])):
-            raise(ValueError("Dimensions of X does not match w0 and w1"))
-
-        y = []
-        for x in X:
-            y.append( np.average(self.w0 + x*self.w1, weights=self.weigths))
-        return np.array(y)
-
-    def rss_vector(self, x, y, w0, w1):
-        """Calculate residual sum of squares for x being an array of size n.
-        Original algorithm from lecture slides which was then optimized for
-        performance The implemented algorithm is the one with the best runtime
-        from bechmark_rss_vector.py
-
-        Args: x (np.array): x values y (np.array): y values w0 (float): offset
-            w1 (float): slope
-
-        Returns: float: residual
-        """        
-        return self._dot_yy + w1*w1*np.dot(x,x) - 2*w1*np.dot(x,y) + len(x)*w0*w0 \
-        - 2*w0*self._sum_y + 2*w0*w1*sum(x)
-
-    def rss(self, X, y, w0, w1):
-        """Calculate the residual sum of squares for X being a Matrix of size 
-        n x m
-
-        Returns: np.array: vector vectorcontaining m residua
-        """  
-        self._dot_yy = np.dot(y,y)
-        self._sum_y = np.sum(y)
-        return np.asarray([
-            self.rss_vector(X[j], y, w0[j], w1[j]) 
-            for j in range(len(X))
-            ])
-        
-
-    def initialize_w(self, X, y):
-        """Initialize w0 (offset) and w1 (slope). Initial values are chosen by
-        finding the smallest and largest x (x_min, x_max) Then we do linear
-        interpolation for f(x_min) and f(x_max)
-
-        Args: X (np.matrix): Matrix of x values y (np.array): y values
-
-        Returns: np.array, np.array: w0 (list of offets), w1 (list of
-            slopesslope)
-        """        
+    def initial_w(self, X, y):
         self.check_Xy(X, y)
 
-        w0, w1 = [], []
-        for x in X:
-            i_0 = x.argmin() 
+        c = 0
+        c, w = [], []
+
+        # TODO: replace with vector operations
+        for x in X.T:
+            i_0 = x.argmin()
             i_1 = x.argmax()
 
-            # calculate slope and offset
+            # calculate slope
             k = (y[i_1] - y[i_0]) / (x[i_1] - x[i_0])
             d = y[i_0] - k*x[i_0]
 
-            w1.append(k)
-            w0.append(d)
+            w.append(k)
+            c.append(d)
 
-        
-        return np.array(w0), np.array(w1)
+        return np.average(c), w
 
     def sanitizeInputXy(self, X, y):
         # check if input is works. If so just return it
@@ -223,8 +101,21 @@ class LinearRegression():
             else:
                 y = np.array(y)
             
-            self.check_Xy(X.T,y)
-            return X.T,y
+            self.check_Xy(X,y)
+            return X ,y
+
+            
+    def predict(self, X):
+        X = np.array(X)
+        # TODO add functionality for single sample
+        if len(self.w) == 0:
+            raise(SystemError("Model is not fitted"))
+
+        if (len(self.w) != len(X[0])):
+            raise(ValueError("Dimensions of X does not match w1"))
+
+        y_pred = np.dot(self.w, X.T) + self.c
+        return y_pred
 
 
     def check_Xy(self, X, y):
@@ -245,28 +136,32 @@ class LinearRegression():
 
         assert len(y.shape) == 1    # y must be 1D
         assert len(X.shape) == 2    # X must be 2D
-        assert len(X[0]) == len(y)  # dimensions must match
+        assert len(X) == len(y)  # dimensions must match
+
+
 
 if __name__ == "__main__":
     alpha = 0.0001
+    max_iter = 5000
 
     
-    n_samples, n_features = 5000, 10
+    m_samples, n_features = 2000, 82
     noise = 0.15
     rng = np.random.RandomState(0)
-    X = np.array([np.linspace(0,1, n_samples) for i in range(n_features)])
 
-    y = np.zeros(n_samples)
-    for i in range(n_features):
-        y += X[i]*(i+1)
-    y = y * (1 + rng.rand(n_samples)*noise) # add noise
+    X = rng.rand(m_samples, n_features)       
+    w = rng.rand(n_features)
+    c = 2
 
-    X = X.T
+    y = np.dot(X, w) + c
+
+
+    #X, y = DataParser.parse_test_housePrices(splitData=True)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1 )
 
 
-    my_reg = LinearRegression(alpha=alpha, weigths="residual")
+    my_reg = LinearRegression(alpha=alpha, max_iter=max_iter)
 
     start_time = time()
     my_reg.fit(X_train, y_train)
@@ -275,9 +170,9 @@ if __name__ == "__main__":
 
 
     
-    sk_reg = linear_model.SGDRegressor(alpha=alpha)
+    sk_reg = linear_model.SGDRegressor(alpha=alpha, max_iter=max_iter)
     start_time = time()
-    sk_reg.fit(X_train,y_train)
+    sk_reg.fit(X_train, y_train)
     end_time = time()
     time_sk = end_time - start_time
 
@@ -287,6 +182,3 @@ if __name__ == "__main__":
 
     print(f"R2 SK Learn: {r2_score(y_test, y_pred_sk)}, time = {time_sk}")
     print(f"R2  ML 2020: {r2_score(y_test, y_pred_my)}, time = {time_my}" )
-    
-
-
