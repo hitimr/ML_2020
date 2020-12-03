@@ -106,6 +106,7 @@ class KNNRegressor():
                  n_neighbors: int = 5,
                  p: int = 2,
                  weights: str = "uniform",
+                 chunk_size = 500,
                  params_dict: dict = None,
                  dist_func=np.linalg.norm,
                  debug: bool = False):
@@ -121,7 +122,7 @@ class KNNRegressor():
             self._params["weights"] = weights
         self._params["algorithm"] = "brute"
 
-        self._chunk_size: int = 5000
+        self._chunk_size: int = chunk_size
 
         self._dist_func = dist_func
         self.KNN_DEBUG = debug
@@ -354,33 +355,34 @@ class KNNRegressor():
             else:
                 neighbors = self.k_nearest(X)
 
-        if self._params["weights"] is None or self._params[
-                "weights"] is "uniform":
-            if self.KNN_DEBUG:
-                print(self._params["weights"])
-                print("neighbors")
-                print(neighbors.dtype)
-                print(neighbors)
-            # y = np.mean(sorted[:, :n_neighbors], axis=1)
-            axis = 0
-            subset = []
-            for sample_neighbors in neighbors:
-                subset.append(
-                    np.take_along_axis(self._training_y,
-                                       sample_neighbors,
-                                       axis=axis))
-            subset = np.array(subset)
+        #if self._params["weights"] in [None, "uniform"]:
+        # we ignore the weights for now
+        if self.KNN_DEBUG:
+            print(self._params["weights"])
+            print("neighbors")
+            print(neighbors.dtype)
+            print(neighbors)
+        # y = np.mean(sorted[:, :n_neighbors], axis=1)
+        axis = 0
+        subset = []
+        for sample_neighbors in neighbors:
+            subset.append(
+                np.take_along_axis(self._training_y,
+                                    sample_neighbors,
+                                    axis=axis))
+        subset = np.array(subset)
 
-            if self.KNN_DEBUG:
-                print(f"subset (taken from axis={axis}):")
-                print(subset)
-            y = np.mean(subset, axis=1)
+        if self.KNN_DEBUG:
+            print(f"subset (taken from axis={axis}):")
+            print(subset)
+        y = np.mean(subset, axis=1)
 
         if ret_distances==1:
             return y, distances
         if ret_distances==2:
             return y, neighbors
         return y
+##### 
 
     def _get_weights(self, weight_type, arg):
         if weight_type == "uniform":
