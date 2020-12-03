@@ -7,7 +7,7 @@ sys.path.insert(0,parentdir)
 import pytest
 import numpy as np
 
-from GD.LinearRegression import LinearRegression
+from GD.MultipleLinearRegression import MultipleLinearRegression as LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 
@@ -130,4 +130,4 @@ def test_rss():
 
 
 if __name__ == "__main__":
-    test_fit()
+    test_rss()
