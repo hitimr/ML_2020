@@ -22,7 +22,7 @@ from common import DataParser
 
 
 
-class LinearRegression():
+class MultipleLinearRegression():
     """
     Custom Classifier for linear Regression.
 
@@ -88,6 +88,12 @@ class LinearRegression():
             self.weigths = np.ones(len(w0), dtype=float)
 
         return self
+
+    def fit2(self, X, y):
+        X, y = self.sanitizeInputXy(X, y)
+        
+        w0, w1 = self.initialize_w(X, y)
+
 
         
     def gradientDescend(self, x, w0, w1):
@@ -266,7 +272,7 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1 )
 
 
-    my_reg = LinearRegression(alpha=alpha, weigths="residual")
+    my_reg = MultipleLinearRegression(alpha=alpha, weigths="residual")
 
     start_time = time()
     my_reg.fit(X_train, y_train)
