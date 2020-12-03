@@ -20,7 +20,7 @@ import config
 from common import DataParser
 
 class LinearRegression():
-    def __init__(self, metric="RSS", alpha=0.0001, max_iter=1000):
+    def __init__(self, alpha=0.0001, max_iter=1000):
 
         self.alpha = alpha
         assert max_iter > 0 # Error: Invalid argument for max_iter
@@ -29,22 +29,23 @@ class LinearRegression():
         self.w = np.array([])
 
 
-    def fit(self, X, y):    
+    def fit(self, X, y):
         X = np.array(X)
         y = np.array(y)
+        c, w = self.initial_w(X, y)
+
         self.y = y
 
-        c, w = self.initial_w(X, y)
-        
         n = float(len(X[0]))
+        X = X.T
         iter_cnt = 0
         while(True):
-            y_pred = np.dot(X, w) + c
-            residual = y - y_pred
+            residual = y - np.dot(w, X) - c
 
-            grad_w =  - 2.0 / n * np.dot(X.T, residual)
+            grad_w =  - 2.0 / n * np.dot(X, residual)
             grad_c =  - 2.0 / n * sum(residual)
 
+            # update simulatinously
             w = w - self.alpha * grad_w          
             c = c - self.alpha * grad_c
 
@@ -64,18 +65,22 @@ class LinearRegression():
     def initial_w(self, X, y):
         self.check_Xy(X, y)
 
-        w0 = 0
-        w0, w1 = 0, []
+        c = 0
+        c, w = [], []
+
         # TODO: replace with vector operations
-        for x in X:
+        for x in X.T:
             i_0 = x.argmin()
             i_1 = x.argmax()
+
             # calculate slope
             k = (y[i_1] - y[i_0]) / (x[i_1] - x[i_0])
+            d = y[i_0] - k*x[i_0]
 
-            w1.append(k)
-        w1 = np.ones(len(X[0]))*2.0    # TODO> remove before release
-        return w0, w1
+            w.append(k)
+            c.append(d)
+
+        return np.average(c), w
 
     def sanitizeInputXy(self, X, y):
         # check if input is works. If so just return it
@@ -136,10 +141,11 @@ class LinearRegression():
 
 
 if __name__ == "__main__":
-    alpha = 0.00001
+    alpha = 0.0001
+    max_iter = 5000
 
     
-    m_samples, n_features = 300, 10
+    m_samples, n_features = 2000, 82
     noise = 0.15
     rng = np.random.RandomState(0)
 
@@ -155,7 +161,7 @@ if __name__ == "__main__":
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1 )
 
 
-    my_reg = LinearRegression(alpha=alpha, max_iter=20000)
+    my_reg = LinearRegression(alpha=alpha, max_iter=max_iter)
 
     start_time = time()
     my_reg.fit(X_train, y_train)
@@ -164,7 +170,7 @@ if __name__ == "__main__":
 
 
     
-    sk_reg = linear_model.SGDRegressor(alpha=alpha)
+    sk_reg = linear_model.SGDRegressor(alpha=alpha, max_iter=max_iter)
     start_time = time()
     sk_reg.fit(X_train, y_train)
     end_time = time()
