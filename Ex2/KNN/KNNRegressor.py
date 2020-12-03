@@ -1,25 +1,78 @@
+# std
 import inspect
 import os
 import sys
-from time import time
-
+# packgaes
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+# std
+from time import time
+from math import floor
+# packages
 from sklearn import linear_model
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
+# modules : setup
 currentdir = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
-
+# modules : import
 import config
 from common import DataParser
 from common.runtime import runtime
 
 # https://stackoverflow.com/questions/8804830/python-multiprocessing-picklingerror-cant-pickle-type-function
+
+
+####
+class ChunkViewer:
+    def __init__(self, chunk_size, array_size):
+        self.array_size = array_size
+        self.chunk_size = chunk_size
+
+        self.current = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        # will be [start, stop) as is customary
+        start = self.current
+        stop = self.array_size if (
+            start + self.chunk_size) > self.array_size else (start +
+                                                             self.chunk_size)
+        self.current = stop
+        #print(start, stop)
+        if start != stop:
+            return start, stop
+        raise StopIteration
+
+    def generator(self, arr: np.ndarray = None):
+        if isinstance(arr, np.ndarray):
+            while True:
+                try:
+                    start, stop = self.__next__()
+                    yield arr[start:stop, ...]
+                except StopIteration:
+                    break
+        else:
+            while True:
+                try:
+                    yield self.__next__()
+                except StopIteration:
+                    break
+
+    def next_as_view(self, arr: np.ndarray):
+        # will be [start, stop) as is customary
+        start, stop = next(self)
+        return arr[start:stop, ...]
+
+
+#######
+
 
 class KNNRegressor():
     """
@@ -66,10 +119,24 @@ class KNNRegressor():
             self._params["n_neighbors"] = n_neighbors
             self._params["p"] = p
             self._params["weights"] = weights
-            self._params["algorithm"] = "brute"
+        self._params["algorithm"] = "brute"
+
+        self._chunk_size: int = 5000
 
         self._dist_func = dist_func
         self.KNN_DEBUG = debug
+
+    @property
+    def chunk_size(self):
+        return self._chunk_size
+
+    @chunk_size.setter
+    def chunk_size(self, size: int):
+        if size < 1:
+            print("Invalid chunk size: rejected!")
+            #return self._chunk_size
+        self._chunk_size = size
+       # return self._chunk_size
 
     @property
     def training_data(self):
@@ -110,7 +177,7 @@ class KNNRegressor():
 
         Really just stores the data...
         """
-        self._training_x, self._training_y = self.sanitizeInputXy(X, y) 
+        self._training_x, self._training_y = self.sanitizeInputXy(X, y)
         self._num_samples = len(self._training_y)
 
         if self._num_samples < self._params["n_neighbors"]:
@@ -161,14 +228,15 @@ class KNNRegressor():
         assert isinstance(X, np.ndarray)  # wrong instance
         assert isinstance(y, np.ndarray)  # wrong instance
         if len(y.shape) > 1:
-            mask = [True if x==1 else False for x in y.shape]
+            mask = [True if x == 1 else False for x in y.shape]
             idx = mask.index(False)
             assert any(mask), str(y.shape) + str(mask)  # y must be 1D
             y_len = y.shape[idx]
         else:
             y_len = len(y)
         assert len(X.shape) == 2, str(X.shape)  # X must be 2D
-        assert X.shape[0] == y_len, (X.shape[0], y_len)  # dimensions must match
+        assert X.shape[0] == y_len, (X.shape[0], y_len
+                                     )  # dimensions must match
 
     #@runtime
     def predict(self, X, ret_distances=0):
@@ -181,13 +249,22 @@ class KNNRegressor():
         if len(X.shape) > 1:
             if X.shape[1] == 1:
                 # single instances
-                return self._predict_single(X, ret_distances)
+                if isinstance(X, pd.DataFrame):
+                    return self._predict_single(X.to_numpy(), ret_distances)
+                else:  # assume its numpy array
+                    return self._predict_single(X, ret_distances)
 
             # multiple instances
-            return self._predict_multi(X, ret_distances)
+            if isinstance(X, pd.DataFrame):
+                return self._predict_multi(X.to_numpy(), ret_distances)
+            else:  # assume its numpy array
+                return self._predict_multi(X, ret_distances)
 
         # single instances
-        return self._predict_single(X, ret_distances)
+        if isinstance(X, pd.DataFrame):
+            return self._predict_single(X.to_numpy(), ret_distances)
+        else:  # assume its numpy array
+            return self._predict_single(X, ret_distances)
 
     def k_nearest(self, X, ret_distances=0):
         n_neighbors = self._params["n_neighbors"]
@@ -198,6 +275,7 @@ class KNNRegressor():
             print("params")
             print(self._params)
 
+        ## Should be unnecessary
         # should be at least 2D np.arrays --> so matrices
         # if isinstance(self._training_x, pd.DataFrame):
         #     diff = self._training_x.to_numpy()
@@ -207,13 +285,18 @@ class KNNRegressor():
         #     diff = diff - X.to_numpy()[:, np.newaxis, :]
         # else:
         #     diff = diff - X[:, np.newaxis, :]
+        #####
+        ## more tmps
+        # diff = self._training_x - X[:, np.newaxis, :]
+        # distances = self._dist_func(diff, ord=self._params["p"], axis=2)
+        # neighbors = np.argpartition(distances, n_neighbors)[:,:n_neighbors]
+        ####
 
-        diff = self._training_x - X[:, np.newaxis, :]
-        distances = self._dist_func(diff, ord=self._params["p"], axis=2)
-        neighbors = np.argpartition(distances, n_neighbors)[:,:n_neighbors]
+        distances = self._dist_func(self._training_x - X[:, np.newaxis, :],
+                                    ord=self._params["p"],
+                                    axis=2)
+        neighbors = np.argpartition(distances, n_neighbors)[:, :n_neighbors]
         if self.KNN_DEBUG:
-            print("diff:")
-            print(diff)
             print("distances")
             print(distances)
             print("neighbors")
@@ -229,15 +312,50 @@ class KNNRegressor():
 
     def _predict_single(self, X, ret_distances):
         print("Single instance")
-        return self._predict_multi(X, ret_distances)
+        return self._predict_multi(X, ret_distances, samples=1)
 
-    def _predict_multi(self, X, ret_distances):
-        if ret_distances:
-            neighbors, distances = self.k_nearest(X, ret_distances=1)
+    def _predict_multi(self, X, ret_distances, samples: int = 0):
+        if samples:
+            prediction_size = samples
         else:
-            neighbors = self.k_nearest(X)
+            prediction_size = X.shape[0]
+        if self.KNN_DEBUG:
+            print(f"number of samples to predict for : {prediction_size}")
 
-        if self._params["weights"] is None or self._params["weights"] is "uniform":
+        # if prediction_size > self._chunk_size:
+        #     chunks = [(x*self._chunk_size, x*self._chunk_size+self._chunk_size) for x in range(floor(samples/self._chunk_size))]
+        #     remainder = samples%self._chunk_size
+        #     if remainder:
+        #         chunks += [(chunks[-1][1], chunks[-1][1] + remainder)]
+        #     if self.KNN_DEBUG:
+        #         print(f"self._chunk_size > prediction_size")
+        #         print(f"{self._chunk_size} > {prediction_size}")
+        #         print(f"chunks in samples: {floor(samples/self._chunk_size)}")
+        #         print(chunks)
+
+        ##TO-DO: continue here
+        if prediction_size > self._chunk_size:
+            print("chunking...")
+            chunk_size = self._chunk_size
+            viewer = ChunkViewer(chunk_size, prediction_size)
+            neighbors = np.concatenate(list(map(self.k_nearest, viewer.generator(X))))
+            if self.KNN_DEBUG:
+                print(f"self._chunk_size > prediction_size")
+                print(f"{self._chunk_size} > {prediction_size}")
+                print(
+                    f"chunks in samples: {1+floor(samples/self._chunk_size)}")
+                print("returning neighbors:")
+                print(neighbors)
+            #return neighbors  # remove later
+
+        else:
+            if ret_distances:
+                neighbors, distances = self.k_nearest(X, ret_distances=1)
+            else:
+                neighbors = self.k_nearest(X)
+
+        if self._params["weights"] is None or self._params[
+                "weights"] is "uniform":
             if self.KNN_DEBUG:
                 print(self._params["weights"])
                 print("neighbors")
@@ -247,7 +365,10 @@ class KNNRegressor():
             axis = 0
             subset = []
             for sample_neighbors in neighbors:
-                subset.append(np.take_along_axis(self._training_y, sample_neighbors, axis=axis))
+                subset.append(
+                    np.take_along_axis(self._training_y,
+                                       sample_neighbors,
+                                       axis=axis))
             subset = np.array(subset)
 
             if self.KNN_DEBUG:
@@ -255,13 +376,16 @@ class KNNRegressor():
                 print(subset)
             y = np.mean(subset, axis=1)
 
-        if ret_distances:
+        if ret_distances==1:
             return y, distances
+        if ret_distances==2:
+            return y, neighbors
         return y
 
     def _get_weights(self, weight_type, arg):
         if weight_type == "uniform":
-            return np.array([1/n_neighbors for n_neighbors in range(1, arg+1)])
+            return np.array(
+                [1 / n_neighbors for n_neighbors in range(1, arg + 1)])
         if weight_type == "distance":
             with np.errstate(divide='ignore'):
                 weights = 1. / arg
@@ -270,16 +394,17 @@ class KNNRegressor():
             weights[inf_row] = inf_mask[inf_row]
             return weights
         else:
-            raise(ValueError("Weights can be either uniform, distance"))
+            raise (ValueError("Weights can be either uniform, distance"))
 
 #### MAGIC ####
 
     def __repr__(self):
-        return repr('KNNRegressor: ' + str(self._params))
+        return repr('KNNRegressor: ' + str(self._params) +
+                    f', chunk_size={self._chunk_size}')
 
     def __str__(self):
         n_neighbors = self._params["n_neighbors"]
-        return f'KNNRegressor with n_neighbors={n_neighbors}'
+        return f'KNNRegressor with n_neighbors={n_neighbors}, chunk_size={self._chunk_size}'
 
 
 ######
