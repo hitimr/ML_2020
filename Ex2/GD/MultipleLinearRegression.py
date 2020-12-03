@@ -88,13 +88,6 @@ class MultipleLinearRegression():
             self.weigths = np.ones(len(w0), dtype=float)
 
         return self
-
-    def fit2(self, X, y):
-        X, y = self.sanitizeInputXy(X, y)
-        
-        w0, w1 = self.initialize_w(X, y)
-
-
         
     def gradientDescend(self, x, w0, w1):
         iter_cnt = 0
