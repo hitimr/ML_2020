@@ -58,3 +58,20 @@ def parse_metro(splitData=False):
         return x, y   # split
     # whole
     return df
+
+
+def parse_superconductivity(splitData=False):
+    """Parse the testing data set "superconductivity". 
+
+    Args: splitData (bool, optional): If true the data is split into x and y. Otherwise the complete Dataframe will be returnes. Defaults to False.
+
+    Returns: [DataFrame or DataFrame, DataFrame]: The complete DataFrame or x and y
+    """    
+    df = pd.read_csv(cfg.DATASET_SUPERCONDUCTIVITY, sep=",")
+
+    if splitData:
+        y = df[cfg.SUPERCONDUCTIVITY_TARGET]
+        x = df[cfg.SUPERCONDUCTIVITY_FEATURES]
+        return x, y   # split
+    # whole
+    return df
