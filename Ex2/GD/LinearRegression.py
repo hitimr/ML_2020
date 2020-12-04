@@ -43,7 +43,7 @@ class LinearRegression():
             residual = y - np.dot(w, X) - c
 
             grad_w =  - 2.0 / n * np.dot(X, residual)
-            grad_c =  - 2.0 / n * sum(residual)
+            grad_c =  - 2.0 / n * np.sum(residual)
 
             # update simulatinously
             w = w - self.alpha * grad_w          
