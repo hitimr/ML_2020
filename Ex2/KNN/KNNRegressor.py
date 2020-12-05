@@ -106,9 +106,10 @@ class KNNRegressor():
                  n_neighbors: int = 5,
                  p: int = 2,
                  weights: str = "uniform",
-                 chunk_size = 500,
+                 chunk_size = 4,
                  params_dict: dict = None,
                  dist_func=np.linalg.norm,
+                 profile = False,
                  debug: bool = False):
         self._training_x = []
         self._training_y = []
@@ -125,6 +126,9 @@ class KNNRegressor():
         self._chunk_size: int = chunk_size
 
         self._dist_func = dist_func
+
+        self.PROFILE = profile
+        self.profile = {"argpartition": [], "distances": [], "mean": [], "neighbors": [], "subset": []}
         self.KNN_DEBUG = debug
 
     @property
@@ -275,28 +279,17 @@ class KNNRegressor():
             print(ret_distances)
             print("params")
             print(self._params)
-
-        ## Should be unnecessary
-        # should be at least 2D np.arrays --> so matrices
-        # if isinstance(self._training_x, pd.DataFrame):
-        #     diff = self._training_x.to_numpy()
-        # else:
-        #     diff = self._training_x
-        # if isinstance(X, pd.DataFrame):
-        #     diff = diff - X.to_numpy()[:, np.newaxis, :]
-        # else:
-        #     diff = diff - X[:, np.newaxis, :]
-        #####
-        ## more tmps
-        # diff = self._training_x - X[:, np.newaxis, :]
-        # distances = self._dist_func(diff, ord=self._params["p"], axis=2)
-        # neighbors = np.argpartition(distances, n_neighbors)[:,:n_neighbors]
-        ####
-
+        if self.PROFILE:
+            start = time()
         distances = self._dist_func(self._training_x - X[:, np.newaxis, :],
                                     ord=self._params["p"],
                                     axis=2)
+        if self.PROFILE:
+            self.profile["distances"].append(time()-start)
+            start = time()
         neighbors = np.argpartition(distances, n_neighbors)[:, :n_neighbors]
+        if self.PROFILE:
+            self.profile["argpartition"].append(time()-start)
         if self.KNN_DEBUG:
             print("distances")
             print(distances)
@@ -323,23 +316,15 @@ class KNNRegressor():
         if self.KNN_DEBUG:
             print(f"number of samples to predict for : {prediction_size}")
 
-        # if prediction_size > self._chunk_size:
-        #     chunks = [(x*self._chunk_size, x*self._chunk_size+self._chunk_size) for x in range(floor(samples/self._chunk_size))]
-        #     remainder = samples%self._chunk_size
-        #     if remainder:
-        #         chunks += [(chunks[-1][1], chunks[-1][1] + remainder)]
-        #     if self.KNN_DEBUG:
-        #         print(f"self._chunk_size > prediction_size")
-        #         print(f"{self._chunk_size} > {prediction_size}")
-        #         print(f"chunks in samples: {floor(samples/self._chunk_size)}")
-        #         print(chunks)
-
-        ##TO-DO: continue here
         if prediction_size > self._chunk_size:
             print("chunking...")
             chunk_size = self._chunk_size
             viewer = ChunkViewer(chunk_size, prediction_size)
+            if self.PROFILE:
+                start = time()
             neighbors = np.concatenate(list(map(self.k_nearest, viewer.generator(X))))
+            if self.PROFILE:
+                self.profile["neighbors"].append(time()-start)
             if self.KNN_DEBUG:
                 print(f"self._chunk_size > prediction_size")
                 print(f"{self._chunk_size} > {prediction_size}")
@@ -347,15 +332,17 @@ class KNNRegressor():
                     f"chunks in samples: {1+floor(samples/self._chunk_size)}")
                 print("returning neighbors:")
                 print(neighbors)
-            #return neighbors  # remove later
 
         else:
+            if self.PROFILE:
+                start = time()
             if ret_distances:
                 neighbors, distances = self.k_nearest(X, ret_distances=1)
             else:
                 neighbors = self.k_nearest(X)
+            if self.PROFILE:
+                self.profile["neighbors"].append(time()-start)
 
-        #if self._params["weights"] in [None, "uniform"]:
         # we ignore the weights for now
         if self.KNN_DEBUG:
             print(self._params["weights"])
@@ -364,18 +351,22 @@ class KNNRegressor():
             print(neighbors)
         # y = np.mean(sorted[:, :n_neighbors], axis=1)
         axis = 0
-        subset = []
-        for sample_neighbors in neighbors:
-            subset.append(
-                np.take_along_axis(self._training_y,
+        if self.PROFILE:
+            start = time()
+        subset = np.array([np.take_along_axis(self._training_y,
                                     sample_neighbors,
-                                    axis=axis))
-        subset = np.array(subset)
+                                    axis=axis) for sample_neighbors in neighbors])
+        if self.PROFILE:
+            self.profile["subset"].append(time()-start)
 
         if self.KNN_DEBUG:
             print(f"subset (taken from axis={axis}):")
             print(subset)
+        if self.PROFILE:
+            start = time()
         y = np.mean(subset, axis=1)
+        if self.PROFILE:
+            self.profile["mean"].append(time()-start)
 
         if ret_distances==1:
             return y, distances

@@ -25,5 +25,5 @@ def preprocessing(df,transform = None):
     scaler.fit(X)
     X = scaler.transform(X)
 
-    return y, X
+    return X, y
 
