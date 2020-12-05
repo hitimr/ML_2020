@@ -92,7 +92,9 @@ class ModelTrainer():
         # Run through all models in parallel threads
         if (self.thread_cnt > 1):
             with Pool(self.thread_cnt) as p:
-                p.map(self.analyze_model, self.permutations_dict)
+                result = p.map(self.analyze_model, self.permutations_dict)
+            self.results = pd.DataFrame(result)
+            
         else:  # or single threaded
             for dik in self.permutations_dict:
                 self.analyze_model(dik)
@@ -102,7 +104,8 @@ class ModelTrainer():
             print(f" - CV fold # ={self.k}")
         else:
             print(" - holdout")
-            self.results = pd.DataFrame(self._result_list)
+            if self.thread_cnt == 1:
+                self.results = pd.DataFrame(self._result_list)
 
     def analyze_model(self, parameter_set):
         """Trains and analyzes a single model variation
@@ -139,7 +142,10 @@ class ModelTrainer():
         if (self.NameOfError):
             parameter_set[self.NameOfError] = self.Variationerror(
                 self.y_test, y_pred)
-        self._result_list.append(parameter_set)
+        if self.thread_cnt > 1:
+            return parameter_set
+        else:
+            self._result_list.append(parameter_set)
 
     def CV_shuffle_split(self, k=3, test_size=0.3, random_state=42):
         print("Using CV with k={k} folds.")

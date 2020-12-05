@@ -82,6 +82,7 @@ class KNNRegressor():
     (1): https://www.analyticsvidhya.com/blog/2018/03/introduction-k-neighbours-algorithm-clustering/
     (2): https://towardsdatascience.com/k-nearest-neighbors-classification-from-scratch-with-numpy-cb222ecfeac1
     (3): https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/neighbors/_regression.py#L160
+    (4): https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html#scipy.spatial.distance.cdist
 
     Basic flow:
     1. Load the data
