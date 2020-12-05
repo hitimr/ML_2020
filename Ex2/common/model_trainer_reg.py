@@ -53,8 +53,8 @@ class ModelTrainer():
         self.row_data_target = np.array(row_data_target)
         self.x_train = np.array(row_data_data)
         self.x_test = np.array(row_data_data)
-        self.y_train = np.array(row_data_target).ravel(
-        )  # not necessary but otherwise a warning might pop up
+        # ravel(): not necessary but otherwise a warning might pop up
+        self.y_train = np.array(row_data_target).ravel()
         self.y_test = np.array(row_data_target).ravel()
 
         self.CFeature = CFeature
@@ -74,8 +74,6 @@ class ModelTrainer():
         self.n_test = 1
         self.results = pd.DataFrame()
         self._result_list = []
-
-        # self._eval_setup = {}
 
     def train(self):
         """Starts the training of all model variations with multiple threads (thread_cnt)
@@ -112,6 +110,7 @@ class ModelTrainer():
         Returns:
             nothing
         """
+        # instantiate model
         model = self.sklearn_model(**parameter_set)
 
         start = time()
@@ -122,7 +121,8 @@ class ModelTrainer():
         y_pred = model.predict(self.x_test)  # make prediction
         parameter_set["inference_time"] = time() - start
 
-        #if self.k:
+        # k=0: holdout
+        # k=1: cv
         parameter_set["k"] = self.k
 
         # Evaluate + score the model and save results
@@ -169,16 +169,15 @@ class ModelTrainer():
             self.row_data_target,
             test_size=test_size,
             random_state=r_split)
-        
+
         self.D = int(self.row_data_data.shape[1])
         self.n_test = len(self.y_test)
         self.n_train = len(self.y_train)
 
-    def retResults(
-        self,
-        fileName=False,
-        reset = True
-    ):  #returns the result dataframe and stores it in the given path
+    def retResults(self, fileName=False, reset=True):
+        """returns the result dataframe and stores it in the given path
+
+        """
         results = pd.DataFrame()
         results = results.append(self._result_list, ignore_index=True)
         if fileName:
@@ -187,31 +186,14 @@ class ModelTrainer():
             self.resetParameter()
         return results
 
-    def resetParameter(self):  
+    def save_result(self, fileName):
+        self.results.to_csv(fileName, index=False)
+
+    def resetParameter(self):
         """ resets the GlobalParameterset to prevent overlapping between other tests
         """
         self._result_list = []
         self.k = 0
-
-    # @property
-    # def eval_setup(self, a_dict: dict):
-    #     self._eval_setup = a_dict
-
-    # @eval_setup.setter
-    # def eval_setup(self, score: str, args):
-    #     self._eval_setup[score] = args
-
-    # @eval_setup.getter
-    # def eval_setup(self):
-    #     return self._eval_setup
-
-    # @eval_setup.getter
-    # def eval_setup(self, key: str):
-    #     return self._eval_setup[key]
-
-    def save_result(self, fileName):
-        #data = #pd.DataFrame(self.result)
-        self.results.to_csv(fileName, index=False)
 
 
 # Example for using the Model Trainer
@@ -233,10 +215,10 @@ if __name__ == "__main__":
     #params = {"n_estimators" : [100]}   #Params for RF
     #params = {"criterion": ["mse"]}     #Params for DT
 
-    data = load_iris()
+    iris_data, iris_target = load_iris(return_X_y=True)
 
-    iris_data = data.data
-    iris_target = data.target
+    # iris_data = data.data
+    # iris_target = data.target
 
     scaler = StandardScaler()
     scaler.fit(iris_data)
