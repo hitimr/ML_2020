@@ -20,13 +20,14 @@ import config
 from common import DataParser
 
 class LinearRegression():
-    def __init__(self, alpha=0.0001, max_iter=1000):
+    def __init__(self, alpha=0.0001, max_iter=1000, init_mode="linear"):
 
         self.alpha = alpha
         assert max_iter > 0 # Error: Invalid argument for max_iter
         self.max_iter = max_iter
         self.c = 0
         self.w = np.array([])
+        self.init_mode = init_mode
 
 
     def fit(self, X, y):
@@ -49,13 +50,10 @@ class LinearRegression():
             w = w - self.alpha * grad_w          
             c = c - self.alpha * grad_c
 
+            # stop if we have reached the maximum amount of iterarations
             iter_cnt += 1
             if iter_cnt >= self.max_iter:
                 break
-
-            # TODO: stop diverging models            
-            #if np.isnan(w0_i) or np.isnan(w0_i):
-                #raise SystemError("Gradient is diverging! try to use smaller alpha")
 
         self.c = c
         self.w = w
@@ -65,22 +63,31 @@ class LinearRegression():
     def initial_w(self, X, y):
         self.check_Xy(X, y)
 
-        c = 0
-        c, w = [], []
+        # Initialize with linear interpolation. See slides for more information
+        if self.init_mode == "linear":
+            c, w = [], []
 
-        # TODO: replace with vector operations
-        for x in X.T:
-            i_0 = x.argmin()
-            i_1 = x.argmax()
+            for x in X.T:
+                i_0 = x.argmin()
+                i_1 = x.argmax()
 
-            # calculate slope
-            k = (y[i_1] - y[i_0]) / (x[i_1] - x[i_0])
-            d = y[i_0] - k*x[i_0]
+                # calculate slope
+                k = (y[i_1] - y[i_0]) / (x[i_1] - x[i_0])
+                d = y[i_0] - k*x[i_0]
 
-            w.append(k)
-            c.append(d)
+                w.append(k)
+                c.append(d)
+            c = np.average(c)
 
-        return np.average(c), w
+        # initialize all c, w_i with 0
+        elif self.init_mode == "constant":
+            c = 0
+            w = np.zeros(len(X[0]), float)
+
+        else:
+            raise(ValueError("Unknown argument for init_mode"))
+
+        return c, w
 
     def sanitizeInputXy(self, X, y):
         # check if input is works. If so just return it
@@ -89,7 +96,6 @@ class LinearRegression():
             return X, y
 
         except:
-
             # Something is not algrigh with the input. Lets try to fix it
             if isinstance(X, pd.DataFrame):
                 X = X.to_numpy().transpose()
@@ -139,7 +145,7 @@ class LinearRegression():
         assert len(X) == len(y)  # dimensions must match
 
 
-
+# For testing and debugging
 if __name__ == "__main__":
     alpha = 0.0001
     max_iter = 5000
