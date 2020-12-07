@@ -1,3 +1,7 @@
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import numpy as np
+
 def plot_CV_with_Std(df, y = "R2_score", regressor = "sklearn", titel = "score vs stabdartdeviation", SaveName = False):
     kmax  = np.max(df["k"])
     list_k = np.linspace(1, kmax, num=kmax)
