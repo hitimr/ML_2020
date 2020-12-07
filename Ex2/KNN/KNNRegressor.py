@@ -29,6 +29,11 @@ from common.runtime import runtime
 
 ####
 class ChunkViewer:
+    """ Custom class to prodive an iterable chunked view of a numpy ndarray.
+        Can help limit the amount of memory needed concurrently.
+
+        Usage: see KNNRegressor
+    """
     def __init__(self, chunk_size, array_size):
         self.array_size = array_size
         self.chunk_size = chunk_size
@@ -39,6 +44,10 @@ class ChunkViewer:
         return self
 
     def __next__(self):
+        """Iterator for the index range [start, stop).
+
+        Returns: start, stop
+        """
         # will be [start, stop) as is customary
         start = self.current
         stop = self.array_size if (
@@ -51,6 +60,10 @@ class ChunkViewer:
         raise StopIteration
 
     def generator(self, arr: np.ndarray = None):
+        """Generator that yields either
+            (i) an iterated view of a numpy array, if arr is numpy array,
+            (ii) or index ranges as above, if arr is not a numpy array or not used.
+        """
         if isinstance(arr, np.ndarray):
             while True:
                 try:
@@ -76,27 +89,28 @@ class ChunkViewer:
 
 class KNNRegressor():
     """
-    Custom KNN Regressor implementation.
+    Our custom KNN Regressor implementation.
+    Model parameters are named the same as in sklearn for ease of use and understanding.
 
-    Reference:
-    (1): https://www.analyticsvidhya.com/blog/2018/03/introduction-k-neighbours-algorithm-clustering/
-    (2): https://towardsdatascience.com/k-nearest-neighbors-classification-from-scratch-with-numpy-cb222ecfeac1
-    (3): https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/neighbors/_regression.py#L160
-    (4): https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html#scipy.spatial.distance.cdist
+    Args:
+        n_neighbors...  number of nearest neighbors (often called k),
+        p...            order of norm,
+        weights...      does nothing at the moment as we did not 
+                        finish implementing weighted average,
+        chunk_size...   sets size of chunks of prediction samples for which
+                        the nearest neighbors are searched for,
+        params_dict...  entry point for setting model parameters via
+                        a dictionary (same as for sklearn),
+        dist_func...    the distance function used,
+        dist_params...  arguments passed to distance functions (overrides p),
+        profile...      switch to turn on profiling mode,
+        debug...        switch to turn on debug output
 
-    Basic flow:
-    1. Load the data
-    2. Initialise the value of k=n_neighbors
-    3. For getting the predicted class, iterate from 1 to total number of training data points
-        3.1. Calculate the distance between test data and each row of training data. Here we will use Euclidean distance as our distance metric since it’s the most popular method. The other metrics that can be used are Chebyshev, cosine, etc.
-        3.2. Sort the calculated distances in ascending order based on distance values
-        3.3. Get top k rows from the sorted array
-        3.4. Get the most frequent class of these rows
-        3.5. Return the predicted class
+    
 
     Numpy functions used:
         - np.mean
-        - np.partition
+        - np.argpartition
         - np.linalg.norm
         - np.take_along_axis: https://numpy.org/doc/stable/reference/generated/numpy.take_along_axis.html#numpy.take_along_axis
 
@@ -107,10 +121,11 @@ class KNNRegressor():
                  n_neighbors: int = 5,
                  p: int = 2,
                  weights: str = "uniform",
-                 chunk_size = 4,
+                 chunk_size: int = 4,
                  params_dict: dict = None,
-                 dist_func=np.linalg.norm,
-                 profile = False,
+                 dist_func = np.linalg.norm,
+                 dist_params: dict = None,
+                 profile: bool = False,
                  debug: bool = False):
         self._training_x = []
         self._training_y = []
@@ -126,10 +141,23 @@ class KNNRegressor():
 
         self._chunk_size: int = chunk_size
 
-        self._dist_func = dist_func
+        self._dist_func = np.max
+        if p:
+            self._dist_func = dist_func
+            self._dist_params = {"ord": p, "axis": 2}
+        if dist_params == None:
+            self._dist_params = {"axis": 2}
+        else:
+            self._dist_params = dist_params
 
         self.PROFILE = profile
-        self.profile = {"argpartition": [], "distances": [], "mean": [], "neighbors": [], "subset": []}
+        self.profile = {
+            "argpartition": [],
+            "distances": [],
+            "mean": [],
+            "neighbors": [],
+            "subset": []
+        }
         self.KNN_DEBUG = debug
 
     @property
@@ -142,7 +170,8 @@ class KNNRegressor():
             print("Invalid chunk size: rejected!")
             #return self._chunk_size
         self._chunk_size = size
-       # return self._chunk_size
+
+    # return self._chunk_size
 
     @property
     def training_data(self):
@@ -179,9 +208,7 @@ class KNNRegressor():
     def fit(self, X, y):
         """Fit the model
 
-        Args: 
-
-        Really just stores the data...
+        Really just stores the data as numpy arrays and checks if dimensions of data align.
         """
         self._training_x, self._training_y = self.sanitizeInputXy(X, y)
         self._num_samples = len(self._training_y)
@@ -224,10 +251,6 @@ class KNNRegressor():
         X must be a Matrix of size n x m
         y must be a vector of size n
 
-        Args:
-            X (): [description]
-            y (): [description]    
-
         Raises:
             AssertionError: If any check fails
         """
@@ -246,7 +269,14 @@ class KNNRegressor():
 
     #@runtime
     def predict(self, X, ret_distances=0):
-        # TODO add functionality for single sample
+        """Predict on the samples X.
+
+        Args:
+            X... data
+            ret_distances...    =1 -> returns distances
+                                =2 -> returns k smallest distances
+                                mostly useful for debugging
+        """
         if len(self._training_x) == 0 or len(self._training_y) == 0:
             raise (SystemError("Model is not fitted"))
         if len(self._training_x) != len(self._training_y):
@@ -273,6 +303,12 @@ class KNNRegressor():
             return self._predict_single(X, ret_distances)
 
     def k_nearest(self, X, ret_distances=0):
+        """Compute k nearest neighbors.
+
+            Returns:
+                array of indices of neighbors for each sample X, 
+                optional: [distances]
+        """
         n_neighbors = self._params["n_neighbors"]
         if self.KNN_DEBUG:
             print("args")
@@ -282,15 +318,17 @@ class KNNRegressor():
             print(self._params)
         if self.PROFILE:
             start = time()
+        # distances = self._dist_func(self._training_x - X[:, np.newaxis, :],
+        #                             ord=self._params["p"],
+        #                             axis=2)
         distances = self._dist_func(self._training_x - X[:, np.newaxis, :],
-                                    ord=self._params["p"],
-                                    axis=2)
+                                    **self._dist_params)
         if self.PROFILE:
-            self.profile["distances"].append(time()-start)
+            self.profile["distances"].append(time() - start)
             start = time()
         neighbors = np.argpartition(distances, n_neighbors)[:, :n_neighbors]
         if self.PROFILE:
-            self.profile["argpartition"].append(time()-start)
+            self.profile["argpartition"].append(time() - start)
         if self.KNN_DEBUG:
             print("distances")
             print(distances)
@@ -318,14 +356,15 @@ class KNNRegressor():
             print(f"number of samples to predict for : {prediction_size}")
 
         if prediction_size > self._chunk_size:
-            print("chunking...")
+            #print("chunking...")
             chunk_size = self._chunk_size
             viewer = ChunkViewer(chunk_size, prediction_size)
             if self.PROFILE:
                 start = time()
-            neighbors = np.concatenate(list(map(self.k_nearest, viewer.generator(X))))
+            neighbors = np.concatenate(
+                list(map(self.k_nearest, viewer.generator(X))))
             if self.PROFILE:
-                self.profile["neighbors"].append(time()-start)
+                self.profile["neighbors"].append(time() - start)
             if self.KNN_DEBUG:
                 print(f"self._chunk_size > prediction_size")
                 print(f"{self._chunk_size} > {prediction_size}")
@@ -342,7 +381,7 @@ class KNNRegressor():
             else:
                 neighbors = self.k_nearest(X)
             if self.PROFILE:
-                self.profile["neighbors"].append(time()-start)
+                self.profile["neighbors"].append(time() - start)
 
         # we ignore the weights for now
         if self.KNN_DEBUG:
@@ -354,11 +393,12 @@ class KNNRegressor():
         axis = 0
         if self.PROFILE:
             start = time()
-        subset = np.array([np.take_along_axis(self._training_y,
-                                    sample_neighbors,
-                                    axis=axis) for sample_neighbors in neighbors])
+        subset = np.array([
+            np.take_along_axis(self._training_y, sample_neighbors, axis=axis)
+            for sample_neighbors in neighbors
+        ])
         if self.PROFILE:
-            self.profile["subset"].append(time()-start)
+            self.profile["subset"].append(time() - start)
 
         if self.KNN_DEBUG:
             print(f"subset (taken from axis={axis}):")
@@ -367,14 +407,14 @@ class KNNRegressor():
             start = time()
         y = np.mean(subset, axis=1)
         if self.PROFILE:
-            self.profile["mean"].append(time()-start)
+            self.profile["mean"].append(time() - start)
 
-        if ret_distances==1:
+        if ret_distances == 1:
             return y, distances
-        if ret_distances==2:
+        if ret_distances == 2:
             return y, neighbors
         return y
-##### 
+#####
 
     def _get_weights(self, weight_type, arg):
         if weight_type == "uniform":

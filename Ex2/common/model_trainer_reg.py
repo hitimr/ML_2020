@@ -93,7 +93,8 @@ class ModelTrainer():
         if (self.thread_cnt > 1):
             with Pool(self.thread_cnt) as p:
                 result = p.map(self.analyze_model, self.permutations_dict)
-            self.results = pd.DataFrame(result)
+            #self.results = pd.DataFrame(result)
+            self._result_list += result
             
         else:  # or single threaded
             for dik in self.permutations_dict:
@@ -148,7 +149,7 @@ class ModelTrainer():
             self._result_list.append(parameter_set)
 
     def CV_shuffle_split(self, k=3, test_size=0.3, random_state=42):
-        print("Using CV with k={k} folds.")
+        print(f"Using CV with k={k} folds.")
         kf = self.CV_shuffle(n_splits=k,
                              test_size=test_size,
                              random_state=random_state)
@@ -201,6 +202,8 @@ class ModelTrainer():
         self._result_list = []
         self.k = 0
 
+    def get_result_list(self):
+        return self._result_list
 
 # Example for using the Model Trainer
 if __name__ == "__main__":
