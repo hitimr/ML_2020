@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt 
+import matplotlib as mpl
 import itertools
 
 # DEFAULT PARAMS FOR plot_params function
@@ -139,3 +140,4 @@ def plot_corr_heatmap(df, fmt=".2f", feat_to_ret="Class", ticksfont=12, abs = Tr
     sns.heatmap(corr, annot=True, fmt=fmt , mask=mask, vmin=0, vmax=1, linewidths=.5,cmap="YlGnBu")
     plt.tick_params(labelsize=ticksfont)
     return corr_to_feat
+
