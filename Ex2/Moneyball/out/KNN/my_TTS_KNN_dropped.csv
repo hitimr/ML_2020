@@ -1,0 +1,2 @@
+n_neighbors,p,chunk_size,train_time,inference_time,k,R2_score,RMSE,D,N,n_test,n_train,MGE
+5,2,600,0.0,0.0030002593994140625,0,0.7837658875383293,29.68495238095238,8,420,210,210,0.004965279581379047

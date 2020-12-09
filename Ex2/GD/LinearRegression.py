@@ -21,9 +21,30 @@ from common import DataParser
 
 class LinearRegression():
     def __init__(self, alpha=0.0001, max_iter=1000, init_mode="linear"):
+        """This class useds gradient descent to find the best linear
+        approximation for a givenb dataset. The class is structures similar to
+        the models of SK Learn to ensure compatibility
 
-        self.alpha = alpha
-        assert max_iter > 0 # Error: Invalid argument for max_iter
+        Example Usage:
+            model = LinearRegression()  
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+
+
+        Args: 
+            alpha (float, optional): learning rate.
+
+            max_iter (int, optional): maximum number of iterations. 
+
+            init_mode (str, optional): "linear" - use linear interpolation
+                to initialize weights; "constant": use 0 to initialize weigths.
+                Defaults to "linear".
+        """
+
+        assert max_iter > 0
+        assert alpha > 0
+
+        self.alpha = alpha        
         self.max_iter = max_iter
         self.c = 0
         self.w = np.array([])
@@ -31,18 +52,28 @@ class LinearRegression():
 
 
     def fit(self, X, y):
+        """Fit the model using grtadient descent. See slides for the algorimth explanation
+
+        Args:
+            X (np.ndarray): 2D array containing training data
+            y (np.array): 1D array containing training target
+
+        """
         X = np.array(X)
         y = np.array(y)
-        c, w = self.initial_w(X, y)
+
+        c, w = self.initial_w(X, y) # Initialize c, w
 
         self.y = y
-
         n = float(len(X[0]))
         X = X.T
         iter_cnt = 0
+
+        # Iterrate
         while(True):
             residual = y - np.dot(w, X) - c
 
+            # calculate derivatives
             grad_w =  - 2.0 / n * np.dot(X, residual)
             grad_c =  - 2.0 / n * np.sum(residual)
 
@@ -113,13 +144,14 @@ class LinearRegression():
             
     def predict(self, X):
         X = np.array(X)
-        # TODO add functionality for single sample
+
         if len(self.w) == 0:
             raise(SystemError("Model is not fitted"))
 
         if (len(self.w) != len(X[0])):
             raise(ValueError("Dimensions of X does not match w1"))
 
+        # Calculate c + w0 * x0 + w1 * x1 + w2 * x2
         y_pred = np.dot(self.w, X.T) + self.c
         return y_pred
 
@@ -147,11 +179,11 @@ class LinearRegression():
 
 # For testing and debugging
 if __name__ == "__main__":
-    alpha = 0.0001
+    alpha = 0.001
     max_iter = 5000
 
     
-    m_samples, n_features = 2000, 82
+    m_samples, n_features = 2000, 10
     noise = 0.15
     rng = np.random.RandomState(0)
 

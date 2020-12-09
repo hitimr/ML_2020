@@ -1,0 +1,2 @@
+n_neighbors,weights,train_time,inference_time,k,R2_score,RMSE,D,N,n_test,n_train,MGE
+5,uniform,0.0,0.0020008087158203125,0,0.7837658875383293,29.68495238095238,8,420,210,210,0.004965279581379047
