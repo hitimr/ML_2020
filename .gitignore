@@ -1,9 +1,10 @@
-# Custom Folders
+# Custom stuff
 */out/
 .vscode
 .vscode/settings.json
 .DS_Store
 Ex1/heart/presentation
+*.epub
 
 
 # Byte-compiled / optimized / DLL files
