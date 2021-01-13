@@ -11,19 +11,23 @@ Advantages of markdown:
 It's simple and you really only need a text editor.
 You can have the file open in VSCode and display the rendered result via preview on the right (might need an extension for that, not sure anymore).
 
-Code can be inserted like this:
+- Links look like this: [Display text here](https://www.google.at)
+  
+  - You can even link to files --> use relative path to link to one of the pdfs in docs
 
-Bash commands
+- Code can be inserted like this:
 
-```bash
-pip install numpy
-```
+    - Bash commands
 
-Python
+    ```bash
+    pip install numpy
+    ```
 
-```python
-print("This. Is. Python.")
-```
+    - Python
+
+    ```python
+    print("This. Is. Python.")
+    ```
 
 ## Topic
 
@@ -37,10 +41,11 @@ Utilising e.g. the library mpyc for Python (​https://github.com/lschoe/mpyc​
 
 - Install [mpyc](​https://github.com/lschoe/mpyc​)
 - OR another similar library/package
+  - [CrypTen](https://github.com/facebookresearch/CrypTen) --> pytorch
 
 ### **Part 2**
 
-- Read: [Abspoel et al, “Fast Secure Comparison for Medium-Sized Integers and Its Application in Binarized Neural Networks”](),
+- Read: [Abspoel et al, “Fast Secure Comparison for Medium-Sized Integers and Its Application in Binarized Neural Networks”](https://link.springer.com/chapter/10.1007/978-3-030-12612-4_23),
 - Train a baseline CNN
 
 ### **Part 3**
