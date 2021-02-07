@@ -5,7 +5,10 @@
 .DS_Store
 Ex1/heart/presentation
 *.epub
+hello.c
 
+# I would like to not sync the datasets for Ex3
+Ex3/*/data
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
