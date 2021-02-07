@@ -17,17 +17,17 @@ You can have the file open in VSCode and display the rendered result via preview
 
 - Code can be inserted like this:
 
-    - Bash commands
+  - Bash commands
 
-    ```bash
-    pip install numpy
+  ```bash
+  pip install numpy
     ```
 
-    - Python
+  - Python
 
-    ```python
-    print("This. Is. Python.")
-    ```
+  ```python
+  print("This. Is. Python.")
+  ```
 
 ## Topic
 
