@@ -1,0 +1,1 @@
+python3 CNN_MINST_Class.py --test-batch-size 100 --epochs 2 "$@"
