@@ -65,3 +65,22 @@ Suggested:
 
 - [mypc homepage](https://www.win.tue.nl/~berry/mpyc/)
 - [Awesome Mpc: A curated list of multi party computation resources and links.](https://awesomeopensource.com/project/rdragos/awesome-mpc)
+- [CrypTen](https://crypten.readthedocs.io/)
+
+## How to run on multiple machines?
+
+Github discussion: <https://github.com/facebookresearch/CrypTen/issues/104>
+
+CrypTen scripts: <https://github.com/facebookresearch/CrypTen/tree/master/scripts>
+
+## IPython not found?
+
+Jupyter lab gave me an error: `Module ipythonlauncher not found`or something similar.
+That issue can occur when launching out of a virtual env.
+A reason might be that the ipython launcher hasn't been configured correctly for that env.
+
+Fix: <https://ipython.readthedocs.io/en/stable/install/kernel_install.html#kernels-for-different-environments>
+
+```bash
+python -m ipykernel install --user --name myenv --display-name "Python (myenv)"
+```

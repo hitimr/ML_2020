@@ -1,6 +1,17 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+def plot_digit(digit, label=None):
+    fig = plt.figure()
+    
+    if label==None:
+        plt.imshow(digit[0][0], cmap='gray', interpolation='none')
+        plt.title(f"Label: {digit[1]}")
+    
+    else:
+        plt.imshow(digit[0], cmap='gray', interpolation='none')
+        plt.title(f"Label: {label}")
+
 def plot_batch(batch, targets, b_range=8, grid=(4,2)):
     (cols, rows) = grid
     step = 1

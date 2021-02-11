@@ -6,6 +6,8 @@
 Ex1/heart/presentation
 *.epub
 hello.c
+kernel.json
+*TMP*
 
 # I would like to not sync the datasets for Ex3
 Ex3/**/data/*
