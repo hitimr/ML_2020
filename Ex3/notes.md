@@ -67,6 +67,10 @@ Suggested:
 - [Awesome Mpc: A curated list of multi party computation resources and links.](https://awesomeopensource.com/project/rdragos/awesome-mpc)
 - [CrypTen](https://crypten.readthedocs.io/)
 
+## Profiling
+
+<https://github.com/ipython-books/cookbook-2nd>
+
 ## How to run on multiple machines?
 
 Github discussion: <https://github.com/facebookresearch/CrypTen/issues/104>
