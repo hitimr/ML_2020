@@ -1,4 +1,5 @@
 import torchvision.transforms as transforms
+import torch.nn as nn
 
 import os,sys,inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -7,8 +8,22 @@ sys.path.insert(0,parentdir)
 
 from config import *
 
+
+# System Constants
+MNIST_IMG_HEIGHT = 28
+MNIST_IMG_HWIDTH = 28
+MNIST_PIXEL_CNT = MNIST_IMG_HEIGHT * MNIST_IMG_HWIDTH
+
 # --- Model Architecture
 ARCHITECTURE = "binary_mnist" # MPyC Architecture
+
+def architecture(self):
+        self.fc1 = nn.Linear(MNIST_PIXEL_CNT, MNIST_PIXEL_CNT)
+        self.fc2 = nn.Linear(MNIST_PIXEL_CNT, MNIST_PIXEL_CNT)
+        self.fc3 = nn.Linear(MNIST_PIXEL_CNT, MNIST_PIXEL_CNT)
+        self.fc4 = nn.Linear(MNIST_PIXEL_CNT, MNIST_PIXEL_CNT)
+        self.fc5 = nn.Linear(MNIST_PIXEL_CNT, 10)
+        
 
 # --- Data Loader
 batch_size = 20  # how many samples per batch to load
@@ -24,16 +39,9 @@ transform = transforms.Compose([
         lambda x: x.float(),
 ])
 
-
 # Model Settings
 model_file_name = MODEL_DIR + "mnist_binary.pt"
 
 # Train Settings
 n_epochs = 5 # number of epochs to train the model
 
-
-
-# System Constants
-MNIST_IMG_HEIGHT = 28
-MNIST_IMG_HWIDTH = 28
-MNIST_PIXEL_CNT = MNIST_IMG_HEIGHT * MNIST_IMG_HWIDTH
