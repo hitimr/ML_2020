@@ -1,0 +1,17 @@
+Rank: 0
+World_Size: 2
+
+Test Loss: 4.83245e+11
+
+Test Accuracy of     0:  99% ( 974 /  980 )
+Test Accuracy of     1:  93% (1060 / 1135 )
+Test Accuracy of     2:  96% ( 986 / 1032 )
+Test Accuracy of     3:  95% ( 961 / 1010 )
+Test Accuracy of     4:  91% ( 893 /  982 )
+Test Accuracy of     5:  93% ( 833 /  892 )
+Test Accuracy of     6:  96% ( 920 /  958 )
+Test Accuracy of     7:  90% ( 928 / 1028 )
+Test Accuracy of     8:  93% ( 901 /  974 )
+Test Accuracy of     9:  95% ( 963 / 1009 )
+
+Test Accuracy (Overall):  94% ( 9419 / 10000 )

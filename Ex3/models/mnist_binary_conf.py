@@ -11,33 +11,66 @@ sys.path.insert(0,parentdir)
 from config import *
 from common import *
 
-
+#
+# ---- Dataset
+#
+# https://github.com/rois-codh/kmnist
+DATASET_FULLNAME = "MNIST database of handwritten digits"
+DATASET_NAME = "mnist"
+DATASET_LINK = "http://yann.lecun.com/exdb/mnist/"
+DATASET_DESCRIPTION = "MNIST database of handwritten digits."
 # System Constants
-MNIST_IMG_HEIGHT = 28   # image height
-MNIST_IMG_HWIDTH = 28   # image width
-MNIST_PIXEL_CNT = MNIST_IMG_HEIGHT * MNIST_IMG_HWIDTH
+#
+IMG_HEIGHT = 28   # image height
+IMG_WIDTH = 28   # image width
+PIXEL_CNT = IMG_HEIGHT * IMG_WIDTH
+NUM_CLASSES = 10
 
-
-   
 
 # ---- Model 
+#
 # File name and path for the final model
-model_file_name = MODEL_DIR + "mnist_binary.pt"   
-
-# Architecture
-# Depth structure of the model aka. number and size of the layers
-# this is function is called in the Net.__init__()
+cnn_file_name = MODEL_DIR + f"{DATASET_NAME}_cnn.pt"   
+bmlp_file_name = MODEL_DIR + f"{DATASET_NAME}_binary.pt"   
+relu_file_name = MODEL_DIR + f"{DATASET_NAME}_relu.pt"   
+model_file_name = relu_file_name
+#
+# --- Architectures
+#
+### BMLP
+# Binarized multi-layer perceptron
+# Mirrors the implementation of the MPyC team in pytorch.
 def layers(self):
-        self.fc1 = nn.Linear(MNIST_PIXEL_CNT, MNIST_PIXEL_CNT)
-        self.fc2 = nn.Linear(MNIST_PIXEL_CNT, MNIST_PIXEL_CNT)
-        self.fc3 = nn.Linear(MNIST_PIXEL_CNT, MNIST_PIXEL_CNT)
-        self.fc4 = nn.Linear(MNIST_PIXEL_CNT, MNIST_PIXEL_CNT)
-        self.fc5 = nn.Linear(MNIST_PIXEL_CNT, 10)
+    """
+    Depth structure of the model aka. number and size of the layers.
+    This is function is called in the Net.__init__()
+    Intended as a friendly function for a pytorch model.
+    
+    CODE:
+    def layers(self):
+        self.fc1 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+        self.fc2 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+        self.fc3 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+        self.fc4 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+        self.fc5 = nn.Linear(PIXEL_CNT, 10)
+    """
+    self.fc1 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+    self.fc2 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+    self.fc3 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+    self.fc4 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+    self.fc5 = nn.Linear(PIXEL_CNT, 10)
 
 # forward function used for the net
-def forward(self, x): 
+def forward(self, x):
+    """
+    Execution flow of the model.
+    This is function is called in the Net.forward().
+    Intended as a friendly function for a pytorch model.
+    
+    CODE:
+    def forward(self, x): 
         # flatten input     
-        x = x.view(-1, MNIST_PIXEL_CNT)
+        x = x.view(-1, PIXEL_CNT)
                
         # Pytorch does not support a (binary) sign activation fucntion
         # so we had to create our own actctivator
@@ -47,7 +80,111 @@ def forward(self, x):
         x = sgn(self.fc4(x))
         x = self.fc5(x)
         return x
+    """
+    # flatten input     
+    x = x.view(-1, PIXEL_CNT)
 
+    # Pytorch does not support a (binary) sign activation fucntion
+    # so we had to create our own actctivator
+    x = sgn(self.fc1(x))
+    x = sgn(self.fc2(x))
+    x = sgn(self.fc3(x))
+    x = sgn(self.fc4(x))
+    x = self.fc5(x)
+    return x
+
+
+def forward_relu(self, x): 
+    """
+    intended as a friendly function for a pytorch model.
+    Execution flow of the model.
+    This is function is called in the Net.forward().
+    
+    CODE:
+    def forward_relu(self, x): 
+        # flatten input     
+        x = x.view(-1, MNIST_PIXEL_CNT)
+        x = self.fc1(x)
+        x = x.relu()
+        x = self.fc2(x)
+        x = x.relu()
+        x = self.fc3(x)
+        x = x.relu()
+        x = self.fc4(x)
+        x = x.relu()
+        x = self.fc5(x)
+        return x
+    """
+        # flatten input     
+        x = x.view(-1, MNIST_PIXEL_CNT)
+        x = self.fc1(x)
+        x = x.relu()
+        x = self.fc2(x)
+        x = x.relu()
+        x = self.fc3(x)
+        x = x.relu()
+        x = self.fc4(x)
+        x = x.relu()
+        x = self.fc5(x)
+        return x
+
+### CNN [WIP]
+# TODO: Custom implementation.
+def layers_cnn(self):
+    """forward
+    
+    intended as a friendly function for a pytorch model.
+    Depth structure of the model aka. number and size of the layers.
+    This is function is called in the Net.__init__()
+    
+    CODE:
+    def layers(self):
+        self.fc1 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+        self.fc2 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+        self.fc3 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+        self.fc4 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+        self.fc5 = nn.Linear(PIXEL_CNT, 10)
+    """
+    self.fc1 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+    self.fc2 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+    self.fc3 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+    self.fc4 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
+    self.fc5 = nn.Linear(PIXEL_CNT, 10)
+
+# forward function used for the net
+def forward_cnn(self, x):
+    """forward
+    
+    intended as a friendly function for a pytorch model.
+    Execution flow of the model.
+    This is function is called in the Net.forward().
+    
+    CODE:
+    def forward(self, x): 
+        # flatten input     
+        x = x.view(-1, PIXEL_CNT)
+               
+        # Pytorch does not support a (binary) sign activation fucntion
+        # so we had to create our own actctivator
+        x = sgn(self.fc1(x))
+        x = sgn(self.fc2(x))
+        x = sgn(self.fc3(x))
+        x = sgn(self.fc4(x))
+        x = self.fc5(x)
+        return x
+    """
+    # flatten input     
+    x = x.view(-1, PIXEL_CNT)
+
+    # Pytorch does not support a (binary) sign activation fucntion
+    # so we had to create our own actctivator
+    x = sgn(self.fc1(x))
+    x = sgn(self.fc2(x))
+    x = sgn(self.fc3(x))
+    x = sgn(self.fc4(x))
+    x = self.fc5(x)
+    return x
+#
 # --- Data
 # Loader
 sample_size = 0  # Number of images from the train set that are actually used for training. (0 = use all)
@@ -56,16 +193,21 @@ valid_size = 0.2 # percentage of training set to use as validation
 num_workers = 0 # number of subprocesses to use for data 
  
 
+#
 # --- Data preparation
 # Thresholding
-transform = transforms.Compose([
+blackwhite_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,)),
         lambda x: x > 0,
         lambda x: x.float(),
 ])
+# bound as the default transform for our scripts
+transform = blackwhite_transform
 
 
+#
 # --- Training
+#
 n_epochs = 5 # number of epochs to train the model
 
