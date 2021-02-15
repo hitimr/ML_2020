@@ -1,7 +1,7 @@
-Rank: 1
+Rank: 3
 World_Size: 4
 
-Test runtime: 1297.70s
+Test runtime: 1297.69s
 Test Loss: 1.933e+12
 
 Test Accuracy of     0:  99% ( 975 /  980 )
