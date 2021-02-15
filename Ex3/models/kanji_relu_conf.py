@@ -33,8 +33,8 @@ NUM_CLASSES = 10
 #
 # File name and path for the final model
 cnn_file_name = MODEL_DIR + f"{DATASET_NAME}_cnn.pt"   
-bmlp_file_name = MODEL_DIR + f"{DATASET_NAME}_binary.pt"   
-model_file_name = bmlp_file_name
+relu_file_name = MODEL_DIR + f"{DATASET_NAME}_relu.pt"   
+model_file_name = relu_file_name
 #
 # --- Architectures
 #
@@ -61,38 +61,39 @@ def layers(self):
     self.fc4 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
     self.fc5 = nn.Linear(PIXEL_CNT, 10)
 
-# forward function used for the net
-def forward(self, x):
+def forward(self, x): 
     """
+    intended as a friendly function for a pytorch model.
     Execution flow of the model.
     This is function is called in the Net.forward().
-    Intended as a friendly function for a pytorch model.
     
     CODE:
-    def forward(self, x): 
+    def forward_relu(self, x): 
         # flatten input     
-        x = x.view(-1, PIXEL_CNT)
-               
-        # Pytorch does not support a (binary) sign activation fucntion
-        # so we had to create our own actctivator
-        x = sgn(self.fc1(x))
-        x = sgn(self.fc2(x))
-        x = sgn(self.fc3(x))
-        x = sgn(self.fc4(x))
+        x = x.view(-1, MNIST_PIXEL_CNT)
+        x = self.fc1(x)
+        x = x.relu()
+        x = self.fc2(x)
+        x = x.relu()
+        x = self.fc3(x)
+        x = x.relu()
+        x = self.fc4(x)
+        x = x.relu()
         x = self.fc5(x)
         return x
     """
-    # flatten input     
-    x = x.view(-1, PIXEL_CNT)
-
-    # Pytorch does not support a (binary) sign activation fucntion
-    # so we had to create our own actctivator
-    x = sgn(self.fc1(x))
-    x = sgn(self.fc2(x))
-    x = sgn(self.fc3(x))
-    x = sgn(self.fc4(x))
-    x = self.fc5(x)
-    return x
+        # flatten input     
+        x = x.view(-1, MNIST_PIXEL_CNT)
+        x = self.fc1(x)
+        x = x.relu()
+        x = self.fc2(x)
+        x = x.relu()
+        x = self.fc3(x)
+        x = x.relu()
+        x = self.fc4(x)
+        x = x.relu()
+        x = self.fc5(x)
+        return x
 
 ### CNN [WIP]
 # TODO: Custom implementation.

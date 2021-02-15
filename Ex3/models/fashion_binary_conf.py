@@ -15,10 +15,10 @@ from common import *
 # ---- Dataset
 #
 # https://github.com/rois-codh/kmnist
-DATASET_FULLNAME = "MNIST database of handwritten digits"
-DATASET_NAME = "mnist"
-DATASET_LINK = "http://yann.lecun.com/exdb/mnist/"
-DATASET_DESCRIPTION = "MNIST database of handwritten digits."
+DATASET_FULLNAME = "Fashion MNIST"
+DATASET_NAME = "fashion"
+DATASET_LINK = "https://github.com/zalandoresearch/fashion-mnist"
+DATASET_DESCRIPTION = "Fashion-MNIST is a dataset of Zalando's article images—consisting of a training set of 60,000 examples and a test set of 10,000 examples. Each example is a 28x28 grayscale image, associated with a label from 10 classes. We intend Fashion-MNIST to serve as a direct drop-in replacement for the original MNIST dataset for benchmarking machine learning algorithms. It shares the same image size and structure of training and testing splits."
 # System Constants
 #
 IMG_HEIGHT = 28   # image height
@@ -30,11 +30,11 @@ SIZE_TRAIN = 60000
 SIZE_TEST = 10000
 SIZE = SIZE_TRAIN + SIZE_TEST
 
-
+#
 # ---- Model 
 #
-# File name and path for the final model 
-bmlp_file_name = MODEL_DIR + f"{DATASET_NAME}_binary.pt"
+# File name and path for the final model
+bmlp_file_name = MODEL_DIR + f"{DATASET_NAME}_binary.pt"   
 model_file_name = bmlp_file_name
 #
 # --- Architectures
@@ -62,38 +62,39 @@ def layers(self):
     self.fc4 = nn.Linear(PIXEL_CNT, PIXEL_CNT)
     self.fc5 = nn.Linear(PIXEL_CNT, 10)
 
-# forward function used for the net
-def forward(self, x):
+def forward(self, x): 
     """
+    intended as a friendly function for a pytorch model.
     Execution flow of the model.
     This is function is called in the Net.forward().
-    Intended as a friendly function for a pytorch model.
     
     CODE:
-    def forward(self, x): 
+    def forward_relu(self, x): 
         # flatten input     
-        x = x.view(-1, PIXEL_CNT)
-               
-        # Pytorch does not support a (binary) sign activation fucntion
-        # so we had to create our own actctivator
-        x = sgn(self.fc1(x))
-        x = sgn(self.fc2(x))
-        x = sgn(self.fc3(x))
-        x = sgn(self.fc4(x))
+        x = x.view(-1, MNIST_PIXEL_CNT)
+        x = self.fc1(x)
+        x = x.relu()
+        x = self.fc2(x)
+        x = x.relu()
+        x = self.fc3(x)
+        x = x.relu()
+        x = self.fc4(x)
+        x = x.relu()
         x = self.fc5(x)
         return x
     """
-    # flatten input     
-    x = x.view(-1, PIXEL_CNT)
-
-    # Pytorch does not support a (binary) sign activation fucntion
-    # so we had to create our own actctivator
-    x = sgn(self.fc1(x))
-    x = sgn(self.fc2(x))
-    x = sgn(self.fc3(x))
-    x = sgn(self.fc4(x))
-    x = self.fc5(x)
-    return x
+        # flatten input     
+        x = x.view(-1, MNIST_PIXEL_CNT)
+        x = self.fc1(x)
+        x = x.sign()
+        x = self.fc2(x)
+        x = x.sign()
+        x = self.fc3(x)
+        x = x.sign()
+        x = self.fc4(x)
+        x = x.sign()
+        x = self.fc5(x)
+        return x
 
 #
 # --- Data
@@ -103,7 +104,7 @@ batch_size = 20  # how many samples per batch to load
 valid_size = 0.2 # percentage of training set to use as validation
 num_workers = 0 # number of subprocesses to use for data 
  
-
+    
 #
 # --- Data preparation
 # Thresholding
