@@ -39,9 +39,8 @@ model_file_name = relu_file_name
 #
 # --- Architectures
 #
-### BMLP
-# Binarized multi-layer perceptron
-# Mirrors the implementation of the MPyC team in pytorch.
+### RELU MLP
+    
 def layers(self):
     """
     Depth structure of the model aka. number and size of the layers.
@@ -84,7 +83,7 @@ def forward(self, x):
         return x
     """
     # flatten input     
-    x = x.view(-1, MNIST_PIXEL_CNT)
+    x = x.view(-1, PIXEL_CNT)
     x = self.fc1(x)
     x = x.relu()
     x = self.fc2(x)
@@ -95,6 +94,15 @@ def forward(self, x):
     x = x.relu()
     x = self.fc5(x)
     return x
+
+class ReLUMLP(nn.Module):
+    def __init__(self):
+        super(ReLUMLP, self).__init__()    
+        layers(self) # defined in the loaded conf file
+
+    def forward(self, x):   
+        return forward(self, x) # defined in loaded conf file
+
 
 #
 # --- Data

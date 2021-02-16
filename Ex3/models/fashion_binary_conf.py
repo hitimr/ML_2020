@@ -84,7 +84,7 @@ def forward(self, x):
         return x
     """
         # flatten input     
-        x = x.view(-1, MNIST_PIXEL_CNT)
+        x = x.view(-1, PIXEL_CNT)
         x = self.fc1(x)
         x = x.sign()
         x = self.fc2(x)
