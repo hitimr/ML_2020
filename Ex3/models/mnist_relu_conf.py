@@ -83,18 +83,18 @@ def forward(self, x):
         x = self.fc5(x)
         return x
     """
-        # flatten input     
-        x = x.view(-1, MNIST_PIXEL_CNT)
-        x = self.fc1(x)
-        x = x.relu()
-        x = self.fc2(x)
-        x = x.relu()
-        x = self.fc3(x)
-        x = x.relu()
-        x = self.fc4(x)
-        x = x.relu()
-        x = self.fc5(x)
-        return x
+    # flatten input     
+    x = x.view(-1, MNIST_PIXEL_CNT)
+    x = self.fc1(x)
+    x = x.relu()
+    x = self.fc2(x)
+    x = x.relu()
+    x = self.fc3(x)
+    x = x.relu()
+    x = self.fc4(x)
+    x = x.relu()
+    x = self.fc5(x)
+    return x
 
 #
 # --- Data
