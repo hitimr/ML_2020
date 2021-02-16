@@ -7,6 +7,7 @@ print(f"Okay, good! You have: {sys.version_info[:3]}")
 # Now we can init crypten!
 crypten.init()
 
+import argparse
 import pathlib
 import crypten.communicator as comm # the communicator is similar to the MPI communicator for example
 from crypten import mpc
@@ -21,32 +22,40 @@ from models.mnist_relu_conf import *
 
 from mpc.setup_mnist import *
 
-import warnings; 
+import warnings
 warnings.filterwarnings("ignore")
 
-def convert_legacy_config():
-    if "MNIST_IMG_HWIDTH" in locals():
-        if "MNIST_IMG_HEIGHT" in locals():
-            IMG_HEIGHT = MNIST_IMG_HEIGHT
-        else:
-            IMG_HEIGHT = 28
-    if "MNIST_IMG_HWIDTH" in locals():
-        if "MNIST_IMG_HWIDTH" in locals():
-            IMG_WIDTH = MNIST_IMG_HWIDTH
-        else:
-            IMG_WIDTH = 28
-    if "IMAGE_TYPE" not in locals():
-        IMAGE_TYPE = "grayscale"
-        if "NUM_CHANNELS" not in locals():
-            NUM_CHANNELS = 1
+parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
+parser.add_argument('--num_participants', type=int, default=2, metavar='P',
+                    help='input number of participants (default: 2)')
 
-check_and_mkdir(pathlib.Path("./log"))
+args = parser.parse_args()
+
+
+# def convert_legacy_config():
+#     if "MNIST_IMG_HWIDTH" in locals():
+#         if "MNIST_IMG_HEIGHT" in locals():
+#             IMG_HEIGHT = MNIST_IMG_HEIGHT
+#         else:
+#             IMG_HEIGHT = 28
+#     if "MNIST_IMG_HWIDTH" in locals():
+#         if "MNIST_IMG_HWIDTH" in locals():
+#             IMG_WIDTH = MNIST_IMG_HWIDTH
+#         else:
+#             IMG_WIDTH = 28
+#     if "IMAGE_TYPE" not in locals():
+#         IMAGE_TYPE = "grayscale"
+#         if "NUM_CHANNELS" not in locals():
+#             NUM_CHANNELS = 1
+
 
 # initialize lists to monitor test loss and accuracy
 # NUM_CLASSES = 10
-num_participants = 4
+num_participants = args.num_participants
 participants = POSSIBLE_PARTICIPANTS[:num_participants]
 torch.set_num_threads(1) #
+
+check_and_mkdir(pathlib.Path("./log"))
 
 assert len(participants) == num_participants # checking for shenanigans
 
@@ -55,12 +64,13 @@ model = Net()
 print(f"Loading model from {model_file_name}")
 model.load_state_dict(torch.load(model_file_name))
 
-convert_legacy_config() # LEGACY
+#convert_legacy_config() # LEGACY
 #model_mpc = crypten.nn.from_pytorch(model, dummy_image)
 
 # Barriers for synchronisation
 before_test = Barrier(num_participants)
 after_test = Barrier(num_participants)
+done = Barrier(num_participants)
 
 # Choose a loss criterion
 #criterion = crypten.nn.CrossEntropyLoss()
@@ -182,8 +192,7 @@ def test_model_mpc():
     with open(f"log/test_log_rank{pid}", "w") as f:
         f.write(LOG_STR)
 
-    return runtime, predictions, class_correct, class_total
+    done.wait()
         
-benchmark = test_model_mpc()
-
-print(benchmark)
+a = test_model_mpc()
+print(a)
