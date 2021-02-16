@@ -1,18 +1,18 @@
 Rank: 0
-World_Size: 4
+World_Size: 3
 
-Test runtime: 1297.69s
-Test Loss: 1.933e+12
+Test runtime: 979.81s
+Test Loss: 1.08731e+12
 
-Test Accuracy of     0:  99% ( 975 /  980 )
-Test Accuracy of     1:  93% (1051 / 1135 )
-Test Accuracy of     2:  96% ( 989 / 1032 )
-Test Accuracy of     3:  95% ( 958 / 1010 )
-Test Accuracy of     4:  90% ( 883 /  982 )
-Test Accuracy of     5:  93% ( 827 /  892 )
-Test Accuracy of     6:  96% ( 919 /  958 )
-Test Accuracy of     7:  89% ( 919 / 1028 )
-Test Accuracy of     8:  93% ( 906 /  974 )
-Test Accuracy of     9:  95% ( 962 / 1009 )
+Test Accuracy of     0:  99% ( 969 /  980 )
+Test Accuracy of     1:  96% (1095 / 1135 )
+Test Accuracy of     2:  91% ( 939 / 1032 )
+Test Accuracy of     3:  93% ( 944 / 1010 )
+Test Accuracy of     4:  89% ( 873 /  982 )
+Test Accuracy of     5:  82% ( 729 /  892 )
+Test Accuracy of     6:  93% ( 891 /  958 )
+Test Accuracy of     7:  91% ( 937 / 1028 )
+Test Accuracy of     8:  88% ( 856 /  974 )
+Test Accuracy of     9:  90% ( 907 / 1009 )
 
-Test Accuracy (Overall):  94% ( 9389 / 10000 )
+Test Accuracy (Overall):  91% ( 9140 / 10000 )
