@@ -76,9 +76,11 @@ if __name__ == '__main__':
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     accuracies = []
     tottime = 0
+    parameter_set = {}
+    results = pd.DataFrame()
     for epoch in range(1, args.epochs + 1):
         start = time.time()
-        functions.train(args, model, device, train_loader, optimizer, epoch)
+        memory, inference_time = functions.train(args, model, device, train_loader, optimizer, epoch)
         #CNN.train_CNN(args, model, device, train_loader, optimizer, epoch)
         accur, y_pred_array, y_true_array = functions.test(model, device, test_loader)
         con_mat = confusion_matrix(y_true_array, y_pred_array, labels=np.arange(0,10))
@@ -88,9 +90,19 @@ if __name__ == '__main__':
         scheduler.step()
         end = time.time()
         tottime += end - start
+        parameter_set["epochtime"] = end - start
+        parameter_set["accuracy"] = accur
+        parameter_set["inference_time"] = inference_time
+        parameter_set["efficience"] = accur/(end - start)
+        parameter_set["total Memory"] = memory
+        results = results.append(parameter_set, ignore_index=True)
         print("epochtime = {} s; efficience = {}\n".format((end - start),accur/(end - start)))
     #print("epochtime {} s".format((end - start)))
     #print("tottime {} s".format(tottime)))
     plt.plot(accuracies)
     plt.grid()
     plt.savefig("out/acc_plot")
+    print("inference_time: ",inference_time,"s")
+    print("total memory: ",memory,"Mb")
+    results.to_csv("out/Hallo.csv", index=False)
+    print(results)
