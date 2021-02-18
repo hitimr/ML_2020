@@ -306,8 +306,8 @@ def test_model_mpc():
             if pid == 0:
                 print(tmp_str)
                 print(f"Saving model at {model_file_name}")
-                torch.save(model_mpc.state_dict(), model_file_name)
-                crypten.save(model_mpc.state_dict(), model_file_name)
+                #torch.save(model_mpc.state_dict(), model_file_name)
+            crypten.save(model_mpc, model_file_name)
             valid_loss_min = valid_loss
             model_mpc.encrypt()
 
