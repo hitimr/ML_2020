@@ -45,6 +45,12 @@ parser.add_argument('--criterion',
                     default='mse',
                     metavar='C',
                     help='input loss criterion to use (default: mse)')
+parser.add_argument('--n_epochs',
+                    type=int,
+                    default=5,
+                    metavar='C',
+                    help='input n_epochs (default: mse)')
+                    
 parser.add_argument('--log',
                     type=str,
                     default='n',
@@ -68,9 +74,14 @@ assert len(participants) == num_participants  # checking for shenanigans
 # Instantiate and load the model
 model = Net()
 
+
 model_file_input = cl_args.model_file
 if model_file_input:
-    model_file_name = model_file_input
+    model_file_name = pathlib.Path(model_file_input)#model_file_input
+
+n_epochs_input = cl_args.n_epochs
+if n_epochs_input:
+    n_epochs = n_epochs_input
 
 #convert_legacy_config() # LEGACY
 #model_mpc = crypten.nn.from_pytorch(model, dummy_image)
@@ -294,9 +305,9 @@ def test_model_mpc():
             LOG_STR += tmp_str
             if pid == 0:
                 print(tmp_str)
-
-            torch.save(model_dec.state_dict(), model_file_name)
+                torch.save(model_mpc.state_dict(), model_file_name)
             valid_loss_min = valid_loss
+            model_mpc.encrypt()
 
     if pid == 0:
         print("Done evaluating...")

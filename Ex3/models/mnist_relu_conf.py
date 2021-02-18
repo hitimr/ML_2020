@@ -107,7 +107,7 @@ class ReLUMLP(nn.Module):
 #
 # --- Data
 # Loader
-sample_size = int(SIZE_TRAIN*0.2)  # Number of images from the train set that are actually used for training. (0 = use all)
+sample_size = int(SIZE_TRAIN*0.05)  # Number of images from the train set that are actually used for training. (0 = use all)
 batch_size = 20  # how many samples per batch to load
 valid_size = 0.2 # percentage of training set to use as validation
 num_workers = 0 # number of subprocesses to use for data 
@@ -129,6 +129,6 @@ transform = blackwhite_transform
 #
 # --- Training
 #
-n_epochs = 2 # number of epochs to train the model
+n_epochs = 1 # number of epochs to train the model
 learning_rate = 0.001
 
