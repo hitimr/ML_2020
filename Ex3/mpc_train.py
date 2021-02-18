@@ -140,7 +140,7 @@ def test_model_mpc():
     targets = []
     class_correct = [0] * NUM_CLASSES
     class_total = [0] * NUM_CLASSES
-    valid_loss_min = -np.inf
+    valid_loss_min = +np.inf
 
     # Load model
     dummy_image = torch.empty([1, NUM_CHANNELS, IMG_WIDTH,
@@ -305,7 +305,9 @@ def test_model_mpc():
             LOG_STR += tmp_str
             if pid == 0:
                 print(tmp_str)
+                print(f"Saving model at {model_file_name}")
                 torch.save(model_mpc.state_dict(), model_file_name)
+                crypten.save(model_mpc.state_dict(), model_file_name)
             valid_loss_min = valid_loss
             model_mpc.encrypt()
 
