@@ -50,6 +50,11 @@ parser.add_argument('--log',
                     default='n',
                     metavar='C',
                     help='enable logging to folder log (default: n = disabled)')
+parser.add_argument('--model_file',
+                    type=str,
+                    default='',
+                    metavar='M',
+                    help='file to save model (default: None)')
 cl_args = parser.parse_args()
 
 # initialize lists to monitor test loss and accuracy
@@ -62,8 +67,10 @@ assert len(participants) == num_participants  # checking for shenanigans
 
 # Instantiate and load the model
 model = Net()
-print(f"Loading model from {model_file_name}")
-model.load_state_dict(torch.load(model_file_name))
+
+model_file_input = cl_args.model_file
+if model_file_input:
+    model_file_name = model_file_input
 
 #convert_legacy_config() # LEGACY
 #model_mpc = crypten.nn.from_pytorch(model, dummy_image)
@@ -93,9 +100,8 @@ else:
 torch.set_num_threads(1)  # One thread per participant
 TOTAL_TIME = time()
 @mpc.run_multiprocess(world_size=num_participants)
-def test_model_mpc():
-    mem_before = get_process_memory()   
-    runtime = 0
+def test_model_mpc(): 
+    mem_before = get_process_memory()  
     pid = comm.get().get_rank()
     ws = comm.get().world_size
     name = participants[pid]
@@ -107,6 +113,7 @@ def test_model_mpc():
     results = {
         "total": 0,
         "per_iter": [],
+        "per_epoch": [],
         "inference": {
             "total": 0,
             "per_batch": [],
@@ -116,10 +123,13 @@ def test_model_mpc():
         "mem_before": mem_before,
         "mem_after": None
     }
+    LOG_STR = ""
+    runtime = 0
     predictions = []
     targets = []
     class_correct = [0] * NUM_CLASSES
     class_total = [0] * NUM_CLASSES
+    valid_loss_min = -np.inf
 
     # Load model
     dummy_image = torch.empty([1, NUM_CHANNELS, IMG_WIDTH,
@@ -251,9 +261,10 @@ def test_model_mpc():
             else:
                 data_enc.append(crypten.cryptensor(data, src=1))
 
-            label_enc = crypten.cryptensor(target, src=0)
+            label_enc = crypten.cryptensor(label, src=0)
             # forward pass: compute predicted outputs by passing inputs to the model
-            output = model_mpc(data)
+            output = [model_mpc(dat) for dat in data_enc]
+            output = crypten.cat(output, dim=0)
             # calculate the loss
             loss = criterion(output, label_enc).get_plain_text()
             # update running validation loss 
@@ -264,18 +275,17 @@ def test_model_mpc():
         train_loss = train_loss / len(train_loader.sampler)
         valid_loss = valid_loss / len(valid_loader.sampler)
 
-        print("Epoch: {} \tTraining Loss: {:.6f} \tValidation Loss: {:.6f}".format(
-            epoch+1, 
-            train_loss,
-            valid_loss
-            ))
+        tmp_str = f"Epoch: {epoch} \tTraining Loss: {train_loss:.6f} \tValidation Loss: {valid_loss:.6f}"
+        LOG_STR += tmp_str
+        print(tmp_str)
 
         # save model if validation loss has decreased
         if valid_loss <= valid_loss_min:
-            print("Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...".format(
-            valid_loss_min,
-            valid_loss))
-            torch.save(model.state_dict(), model_file_name)
+            model_dec = model_mpc.decrypt()
+            tmp_str = f"Validation loss decreased ({valid_loss_min:.6f} --> {valid_loss:.6f}).  Saving model ..."
+            LOG_STR += tmp_str
+            print(tmp_str)
+            torch.save(model_dec.state_dict(), model_file_name)
             valid_loss_min = valid_loss
 
     if pid == 0:
@@ -287,7 +297,7 @@ def test_model_mpc():
         print("Ouputing information...")
 
     # calculate and print avg test loss
-    test_loss = test_loss / len(test_loader.sampler)
+    #test_loss = test_loss / len(test_loader.sampler)
     # if pid == 0:
     #     print(f"Test runtime: {runtime:5.2f}s\n\n")
     #     print(f"Test Loss: {test_loss:.6}\n")
@@ -309,21 +319,21 @@ def test_model_mpc():
     #         f"( {np.sum(class_correct)} / {np.sum(class_total)} )")
 
     # Gather log
-    LOG_STR = f"Rank: {pid}\nWorld_Size: {ws}\n\n"
-    LOG_STR += f"Test runtime: {runtime:5.2f}s\n"
-    LOG_STR += f"Test Loss: {test_loss:.6}\n"
-    LOG_STR += "\n"
-    for i in range(NUM_CLASSES):
-        if class_total[i] > 0:
-            LOG_STR += f"Test Accuracy of {i:5}: " \
-                  f"{100 * class_correct[i] / class_total[i]:3.0f}% " \
-                  f"({np.sum(class_correct[i]):4} / {np.sum(class_total[i]):4} )"
-            LOG_STR += "\n"
-        else:
-            LOG_STR += f"Test Accuracy of {classes[i]}: N/A (no training examples)"
-            LOG_STR += "\n"
-    LOG_STR += f"\nTest Accuracy (Overall): {100. * np.sum(class_correct) / np.sum(class_total):3.0f}% " + \
-          f"( {np.sum(class_correct)} / {np.sum(class_total)} )"
+    # LOG_STR = f"Rank: {pid}\nWorld_Size: {ws}\n\n"
+    # LOG_STR += f"Test runtime: {runtime:5.2f}s\n"
+    # LOG_STR += f"Test Loss: {test_loss:.6}\n"
+    # LOG_STR += "\n"
+    # for i in range(NUM_CLASSES):
+    #     if class_total[i] > 0:
+    #         LOG_STR += f"Test Accuracy of {i:5}: " \
+    #               f"{100 * class_correct[i] / class_total[i]:3.0f}% " \
+    #               f"({np.sum(class_correct[i]):4} / {np.sum(class_total[i]):4} )"
+    #         LOG_STR += "\n"
+    #     else:
+    #         LOG_STR += f"Test Accuracy of {classes[i]}: N/A (no training examples)"
+    #         LOG_STR += "\n"
+    # LOG_STR += f"\nTest Accuracy (Overall): {100. * np.sum(class_correct) / np.sum(class_total):3.0f}% " + \
+    #       f"( {np.sum(class_correct)} / {np.sum(class_total)} )"
     
     if pid == 0:
         print(LOG_STR)
@@ -335,6 +345,8 @@ def test_model_mpc():
     done.wait()
     mem_after = get_process_memory()
     results["mem_after"] = mem_after
+    if pid==0:
+        torch
     return results
 
 TOTAL_TIME = elapsed_since(TOTAL_TIME)
