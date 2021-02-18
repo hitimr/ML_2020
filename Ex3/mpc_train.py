@@ -1,6 +1,6 @@
 """mpc_train.py
 
-python mpc_train.py --num_participants 2 --log n
+python mpc_train.py --num_participants 2 --log n --model_file ./models/mpc_mnist_relu.pt
 """
 
 import argparse
@@ -261,10 +261,16 @@ def test_model_mpc():
             else:
                 data_enc.append(crypten.cryptensor(data, src=1))
 
+
+            label_eye = torch.eye(10)
+            label = label_eye[label]
             label_enc = crypten.cryptensor(label, src=0)
             # forward pass: compute predicted outputs by passing inputs to the model
             output = [model_mpc(dat) for dat in data_enc]
             output = crypten.cat(output, dim=0)
+            if pid == 0:
+                if output.shape != label_enc.shape:
+                    print((output.shape, label_enc.shape))
             # calculate the loss
             loss = criterion(output, label_enc).get_plain_text()
             # update running validation loss 
@@ -275,16 +281,20 @@ def test_model_mpc():
         train_loss = train_loss / len(train_loader.sampler)
         valid_loss = valid_loss / len(valid_loader.sampler)
 
-        tmp_str = f"Epoch: {epoch} \tTraining Loss: {train_loss:.6f} \tValidation Loss: {valid_loss:.6f}"
+        tmp_str = f"Epoch: {epoch} \tTraining Loss: {train_loss:.6f} \tValidation Loss: {valid_loss:.6f}\n"
         LOG_STR += tmp_str
-        print(tmp_str)
+        if pid == 0:
+            print(tmp_str)
 
         # save model if validation loss has decreased
         if valid_loss <= valid_loss_min:
             model_dec = model_mpc.decrypt()
-            tmp_str = f"Validation loss decreased ({valid_loss_min:.6f} --> {valid_loss:.6f}).  Saving model ..."
+
+            tmp_str = f"Validation loss decreased ({valid_loss_min:.6f} --> {valid_loss:.6f}).  Saving model ...\n"
             LOG_STR += tmp_str
-            print(tmp_str)
+            if pid == 0:
+                print(tmp_str)
+
             torch.save(model_dec.state_dict(), model_file_name)
             valid_loss_min = valid_loss
 
@@ -345,8 +355,7 @@ def test_model_mpc():
     done.wait()
     mem_after = get_process_memory()
     results["mem_after"] = mem_after
-    if pid==0:
-        torch
+
     return results
 
 TOTAL_TIME = elapsed_since(TOTAL_TIME)

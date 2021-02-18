@@ -1,3 +1,9 @@
+"""evaluate a model via MPC
+
+Example call to start with 6 participants/processes and pipe output into log file.
+
+python mpc_evaluate.py --num_participants 6 --log n > log/6p.log
+"""
 import argparse
 import pathlib
 import sys
