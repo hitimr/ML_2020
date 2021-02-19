@@ -1,6 +1,8 @@
 """mpc_train.py
 
-python mpc_train.py --num_participants 2 --log n --model_file ./models/mpc_mnist_relu.pt
+python mpc_train.py --num_participants 2 --model_file ./models/mpc_mnist_relu_ts0.5perc.pt 
+
+python mpc_train.py --num_participants 2 --dataset fashion
 """
 
 import argparse
@@ -26,10 +28,7 @@ from time import time
 from ex3_lib.data import split_data_even
 from ex3_lib.dir_setup import POSSIBLE_PARTICIPANTS, check_and_mkdir
 
-from models.mnist_relu_conf import ReLUMLP as Net
-from models.mnist_relu_conf import *
-from mpc.setup_mnist import *
-from mpc.profile import * 
+from mpc.mpc_profile import * 
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -45,43 +44,43 @@ parser.add_argument('--criterion',
                     default='mse',
                     metavar='C',
                     help='input loss criterion to use (default: mse)')
-parser.add_argument('--n_epochs',
-                    type=int,
-                    default=5,
-                    metavar='C',
-                    help='input n_epochs (default: mse)')
-                    
-parser.add_argument('--log',
-                    type=str,
-                    default='n',
-                    metavar='C',
-                    help='enable logging to folder log (default: n = disabled)')
 parser.add_argument('--model_file',
                     type=str,
                     default='',
                     metavar='M',
                     help='file to save model (default: None)')
+parser.add_argument('--dataset',
+                    type=str,
+                    default='mnist',
+                    metavar='D',
+                    help='dataset to train on (default: mnist)')
 cl_args = parser.parse_args()
 
+dataset_input = cl_args.dataset
+if dataset_input=="mnist":
+    print("Training with MNIST dataset")
+    from models.mnist_relu_conf import ReLUMLP as Net
+    from models.mnist_relu_conf import *
+    from mpc.setup_mnist import *
+elif dataset_input=="fashion":
+    print("Training with FASHION dataset")
+    from models.fashion_relu_conf import ReLUMLP as Net
+    # from models.fashion_relu_conf import *
+    from mpc.setup_fashion import *
+else:
+    raise ValueError("Invalid dataset choice!")
 # initialize lists to monitor test loss and accuracy
 # NUM_CLASSES = 10
 num_participants = cl_args.num_participants
 participants = POSSIBLE_PARTICIPANTS[:num_participants]
-
-
 assert len(participants) == num_participants  # checking for shenanigans
 
 # Instantiate and load the model
 model = Net()
 
-
 model_file_input = cl_args.model_file
 if model_file_input:
     model_file_name = pathlib.Path(model_file_input)#model_file_input
-
-n_epochs_input = cl_args.n_epochs
-if n_epochs_input:
-    n_epochs = n_epochs_input
 
 #convert_legacy_config() # LEGACY
 #model_mpc = crypten.nn.from_pytorch(model, dummy_image)
@@ -102,16 +101,23 @@ elif criterion_type == "crossentropy":
     criterion = crypten.nn.CrossEntropyLoss()
 else:
     raise ValueError(f"{criterion_type} is not a supported criterion! See help for supported types")
-log_switch = cl_args.log
-if log_switch == "y":
-    check_and_mkdir(pathlib.Path("./log")) # log each processes results to file
-else:
-    print("Logging to file disabled")
 
+# Logging functionality
+log_dir = pathlib.Path("./log/train")
+check_and_mkdir(log_dir)
+memory_dir= log_dir / "memory"
+runtimes_dir = log_dir / "runtimes"
+results_dir = log_dir / "results"
+check_and_mkdir(memory_dir) 
+check_and_mkdir(runtimes_dir)
+check_and_mkdir(results_dir)
+
+print(f"Logging to {str(log_dir.absolute())}")
 torch.set_num_threads(1)  # One thread per participant
-TOTAL_TIME = time()
+
+
 @mpc.run_multiprocess(world_size=num_participants)
-def test_model_mpc(): 
+def train_model_mpc(): 
     mem_before = get_process_memory()  
     pid = comm.get().get_rank()
     ws = comm.get().world_size
@@ -141,6 +147,12 @@ def test_model_mpc():
     class_correct = [0] * NUM_CLASSES
     class_total = [0] * NUM_CLASSES
     valid_loss_min = +np.inf
+
+    # Setup log file per process
+    postfix = f"{DATASET_NAME}_{ws}p_{pid}.log"
+    memory_log = memory_dir / postfix
+    runtimes_log = runtimes_dir / postfix
+    results_log = results_dir / postfix
 
     # Load model
     dummy_image = torch.empty([1, NUM_CHANNELS, IMG_WIDTH,
@@ -202,7 +214,7 @@ def test_model_mpc():
             output = crypten.cat(output, dim=0)
             #output.set_grad_enabled = True
             # convert output probabilities to predicted class
-            pred = output.argmax(dim=1, one_hot=False)
+            # pred = output.argmax(dim=1, one_hot=False)
 
             # calculate the loss
             if pid == 0:
@@ -306,13 +318,14 @@ def test_model_mpc():
             if pid == 0:
                 print(tmp_str)
                 print(f"Saving model at {model_file_name}")
-                #torch.save(model_mpc.state_dict(), model_file_name)
-            crypten.save(model_mpc, model_file_name)
+                #orch.save(model_mpc.state_dict(), model_file_name)
+                torch.save(model_dec, model_file_name)
             valid_loss_min = valid_loss
-            model_mpc.encrypt()
+            model_mpc.encrypt(src=0)
+        log_memory(memory_log)
 
     if pid == 0:
-        print("Done evaluating...")
+        print("Done training...")
 
     after_test.wait()
 
@@ -361,36 +374,44 @@ def test_model_mpc():
     if pid == 0:
         print(LOG_STR)
 
-    if log_switch=="y":
-        with open(f"log/test_log_rank{pid}", "w") as f:
-            f.write(LOG_STR)
-
+    with open(f"./log/train/stdout_{pid}", "w") as f:
+        f.write(LOG_STR)
+    
     done.wait()
     mem_after = get_process_memory()
     results["mem_after"] = mem_after
+    with open(results_log, 'w') as f:
+        f.write(str(results))
+    if pid == 0:
+        with open(results_dir / f'latest_{pid}.txt', 'w') as f:
+            f.write(str(results))
 
     return results
+#### Main train function
 
-TOTAL_TIME = elapsed_since(TOTAL_TIME)
-RESULTS = test_model_mpc()
-mem_before = RESULTS[0]["mem_before"]
-mem_after = RESULTS[0]["mem_after"]
-print(f"Memory usage: memory before: {mem_before:}, after: {mem_after:}, consumed: {mem_after - mem_before:}; exec time: {TOTAL_TIME}")
-print(RESULTS[0])
+if __name__ == "__main__":
+    TOTAL_TIME = time()
 
-# Test runtime: 761.02s
+    RESULTS = train_model_mpc()
 
-# Test Loss: 1.2081e+11
+    TOTAL_TIME = elapsed_since(TOTAL_TIME)
+    mem_before = RESULTS[0]["mem_before"]
+    mem_after = RESULTS[0]["mem_after"]
+    print(f"Memory usage: memory before: {str(mem_before):}, after: {str(mem_after):}, consumed: {str((mem_after[0] - mem_before[0], mem_after[1])):}; exec time: {str(TOTAL_TIME)}")
 
-# Test Accuracy of     0:  98% ( 964 /  980 )
-# Test Accuracy of     1:  98% (1110 / 1135 )
-# Test Accuracy of     2:  90% ( 925 / 1032 )
-# Test Accuracy of     3:  94% ( 949 / 1010 )
-# Test Accuracy of     4:  90% ( 885 /  982 )
-# Test Accuracy of     5:  86% ( 763 /  892 )
-# Test Accuracy of     6:  93% ( 889 /  958 )
-# Test Accuracy of     7:  94% ( 962 / 1028 )
-# Test Accuracy of     8:  83% ( 806 /  974 )
-# Test Accuracy of     9:  89% ( 894 / 1009 )
+    print(RESULTS[0])
 
-# Test Accuracy (Overall):  91% ( 9147 / 10000 )
+
+# results = {
+#         "total": 0,
+#         "per_iter": [],
+#         "per_epoch": [],
+#         "inference": {
+#             "total": 0,
+#             "per_batch": [],
+#             "per_image": [],
+#             "average_per_image": 0
+#         },
+#         "mem_before": mem_before,
+#         "mem_after": None
+#     }

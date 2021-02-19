@@ -34,7 +34,7 @@ SIZE = SIZE_TRAIN + SIZE_TEST
 # ---- Model 
 #
 # File name and path for the final model
-relu_file_name = MODEL_DIR + f"{DATASET_NAME}_relu.pt"   
+relu_file_name = MODEL_DIR + f"/{DATASET_NAME}_relu.pt"   
 model_file_name = relu_file_name
 #
 # --- Architectures
@@ -129,6 +129,6 @@ transform = blackwhite_transform
 #
 # --- Training
 #
-n_epochs = 1 # number of epochs to train the model
+n_epochs = 2 # number of epochs to train the model
 learning_rate = 0.001
 

@@ -2,8 +2,9 @@
 
 Example call to start with 6 participants/processes and pipe output into log file.
 
-python mpc_evaluate.py --num_participants 6 --log n > log/6p.log
+python mpc_evaluate.py --num_participants 2 --dataset fashion
 """
+
 import argparse
 import pathlib
 import sys
@@ -27,10 +28,7 @@ from time import time
 from ex3_lib.data import split_data_even
 from ex3_lib.dir_setup import POSSIBLE_PARTICIPANTS, check_and_mkdir
 
-from models.mnist_relu_conf import ReLUMLP as Net
-from models.mnist_relu_conf import *
-from mpc.setup_mnist import *
-from mpc.profile import * 
+from mpc.mpc_profile import * 
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -46,35 +44,33 @@ parser.add_argument('--criterion',
                     default='mse',
                     metavar='C',
                     help='input loss criterion to use (default: mse)')
-parser.add_argument('--log',
+parser.add_argument('--model_file',
                     type=str,
-                    default='n',
-                    metavar='C',
-                    help='enable logging to folder log (default: n = disabled)')
+                    default='',
+                    metavar='M',
+                    help='file to save model (default: None)')
+parser.add_argument('--dataset',
+                    type=str,
+                    default='mnist',
+                    metavar='D',
+                    help='dataset to train on (default: mnist)')
+
 cl_args = parser.parse_args()
 
-# initialize lists to monitor test loss and accuracy
-# NUM_CLASSES = 10
-num_participants = cl_args.num_participants
-participants = POSSIBLE_PARTICIPANTS[:num_participants]
-
-
-assert len(participants) == num_participants  # checking for shenanigans
-
-# Instantiate and load the model
-model = Net()
-print(f"Loading model from {model_file_name}")
-model.load_state_dict(torch.load(model_file_name))
-
-#convert_legacy_config() # LEGACY
-#model_mpc = crypten.nn.from_pytorch(model, dummy_image)
-
-# Barriers for synchronisation
-before_test = Barrier(num_participants)
-after_test = Barrier(num_participants)
-done = Barrier(num_participants)
-
-iter_sync = Barrier(num_participants)
+dataset_input = cl_args.dataset
+if dataset_input=="mnist":
+    print("Evaluating with MNIST dataset")
+    from models.mnist_relu_conf import ReLUMLP as Net
+    from models.mnist_relu_conf import *
+    from mpc.setup_mnist import *
+elif dataset_input=="fashion":
+    print("Evaluating with FASHION dataset")
+    from models.fashion_relu_conf import ReLUMLP as Net
+    # from models.fashion_relu_conf import *
+    from mpc.setup_fashion import *
+    print(model_file_name)
+else:
+    raise ValueError("Invalid dataset choice!")
 
 ### Choose a loss criterion
 # Crypten loss criteria
@@ -85,14 +81,39 @@ elif criterion_type == "crossentropy":
     criterion = crypten.nn.CrossEntropyLoss()
 else:
     raise ValueError(f"{criterion_type} is not a supported criterion! See help for supported types")
-log_switch = cl_args.log
-if log_switch == "y":
-    check_and_mkdir(pathlib.Path("./log")) # log each processes results to file
-else:
-    print("Logging to file disabled")
 
+# initialize lists to monitor test loss and accuracy
+# NUM_CLASSES = 10
+num_participants = cl_args.num_participants
+participants = POSSIBLE_PARTICIPANTS[:num_participants]
+assert len(participants) == num_participants  # checking for shenanigans
+
+model_file_input = cl_args.model_file
+if model_file_input:
+    model_file_name = pathlib.Path(model_file_input)#model_file_input
+print(f"Loading model from {model_file_name}")
+#model.load_state_dict(torch.load(model_file_name))
+
+# Barriers for synchronisation
+before_test = Barrier(num_participants)
+after_test = Barrier(num_participants)
+done = Barrier(num_participants)
+
+iter_sync = Barrier(num_participants)
+
+# Logging functionality
+log_dir = pathlib.Path("./log/eval")
+check_and_mkdir(log_dir)
+memory_dir= log_dir / "memory"
+runtimes_dir = log_dir / "runtimes"
+results_dir = log_dir / "results"
+check_and_mkdir(memory_dir) 
+check_and_mkdir(runtimes_dir)
+check_and_mkdir(results_dir)
+
+print(f"Logging to {str(log_dir.absolute())}")
 torch.set_num_threads(1)  # One thread per participant
-TOTAL_TIME = time()
+
 @mpc.run_multiprocess(world_size=num_participants)
 def test_model_mpc():
     mem_before = get_process_memory()   
@@ -122,10 +143,24 @@ def test_model_mpc():
     class_correct = [0] * NUM_CLASSES
     class_total = [0] * NUM_CLASSES
 
+    # Setup log files per process
+    postfix = f"{DATASET_NAME}_{ws}p_{pid}.log"
+    memory_log = memory_dir / postfix
+    runtimes_log = runtimes_dir / postfix
+    results_log = results_dir / postfix
+
+    #convert_legacy_config() # LEGACY
+    #model_mpc = crypten.nn.from_pytorch(model, dummy_image)
+    # Instantiate and load the model
+    model = Net()
     # Load model
     dummy_image = torch.empty([1, NUM_CHANNELS, IMG_WIDTH,
                                IMG_HEIGHT])  # is that the right way around? :D
-    #model = crypten.load(model_file_name, dummy_model=Net(), src=0)
+                               
+    #model = crypten.load(model_file_name, dummy_model=model)
+
+    model.load_state_dict(torch.load(model_file_name))
+    #model = crypten.load(model_file_name, dummy_model=model, src=0)
     model_mpc = crypten.nn.from_pytorch(model, dummy_image)
     model_mpc.encrypt(src=0)
 
@@ -188,6 +223,7 @@ def test_model_mpc():
 
         iters += 1
         iter_sync.wait()
+        log_memory(memory_log)
 
     stop = time()
     runtime = stop - start
@@ -257,21 +293,32 @@ def test_model_mpc():
     if pid == 0:
         print(LOG_STR)
 
-    if log_switch=="y":
-        with open(f"log/test_log_rank{pid}", "w") as f:
-            f.write(LOG_STR)
-
+    with open(log_dir / f"stdout_{pid}", "w") as f:
+        f.write(LOG_STR)
+    
     done.wait()
     mem_after = get_process_memory()
     results["mem_after"] = mem_after
-    return results
+    with open(results_log, 'w') as f:
+        f.write(str(results))
+    if pid == 0:
+        with open(results_dir / f'latest_{pid}.txt', 'w') as f:
+            f.write(str(results))
 
-TOTAL_TIME = elapsed_since(TOTAL_TIME)
-RESULTS = test_model_mpc()
-mem_before = RESULTS[0]["mem_before"]
-mem_after = RESULTS[0]["mem_after"]
-print(f"Memory usage: memory before: {mem_before:}, after: {mem_after:}, consumed: {mem_after - mem_before:}; exec time: {TOTAL_TIME}")
-print(RESULTS[0])
+    return results
+#### Main eval function
+
+if __name__ == "__main__":
+    TOTAL_TIME = time()
+    RESULTS = test_model_mpc()
+    TOTAL_TIME = elapsed_since(TOTAL_TIME)
+
+    mem_before = RESULTS[0]["mem_before"]
+    mem_after = RESULTS[0]["mem_after"]
+
+    print(f"Memory usage: memory before: {str(mem_before):}, after: {str(mem_after):}, consumed: {str((mem_after[0] - mem_before[0], mem_after[1])):}; exec time: {str(TOTAL_TIME)}")
+
+    print(RESULTS[0])
 
 # Test runtime: 761.02s
 
