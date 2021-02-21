@@ -11,7 +11,7 @@ import time
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
-    memory_sum = 0
+    memory = []
     start = time.time()
     for batch_idx, (data, target) in enumerate(train_loader):
         memory_start = psutil.virtual_memory().total - psutil.virtual_memory().available
@@ -23,15 +23,15 @@ def train(args, model, device, train_loader, optimizer, epoch):
         optimizer.step()
         if batch_idx % args.log_interval == 0:
             memory_end = psutil.virtual_memory().total - psutil.virtual_memory().available
-            memory = np.abs(memory_end - memory_start)/(1024**2)
-            memory_sum += memory
+            memory_diff = np.abs(memory_end - memory_start)/(1024**2)
+            memory.append(memory_diff)
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
             if args.dry_run:
                 break
     end = time.time()
-    return memory_sum, end - start
+    return np.max(memory), end - start
 
 
 def test(model, device, test_loader):

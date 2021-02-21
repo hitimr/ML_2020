@@ -63,13 +63,19 @@ if __name__ == '__main__':
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
         ])
-    dataset1 = datasets.MNIST('../data', train=True, download=True,
-                       transform=transform)
-    dataset2 = datasets.MNIST('../data', train=False,
-                       transform=transform)
+    #dataset1 = datasets.MNIST('../data', train=True, download=True,
+                       #transform=transform)
+    #dataset2 = datasets.MNIST('../data', train=False,
+                       #transform=transform)
+
+    
+
+
+    dataset1 = datasets.FashionMNIST(root = "data", train = True, download = True, transform = transform)
+    dataset2 = datasets.FashionMNIST(root = "data", train = False, download = True, transform = transform)
+
     train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
-
     model = CNN.Net(args.first_layer_in,args.first_layer_out).to(device)
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
@@ -104,5 +110,5 @@ if __name__ == '__main__':
     plt.savefig("out/acc_plot")
     print("inference_time: ",inference_time,"s")
     print("total memory: ",memory,"Mb")
-    results.to_csv("out/Hallo.csv", index=False)
+    results.to_csv("out/Results_FASION.csv", index=False)
     print(results)
