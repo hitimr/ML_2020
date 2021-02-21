@@ -334,7 +334,7 @@ if __name__ == "__main__":
 
     print(f"Memory usage: memory before: {str(mem_before):}, after: {str(mem_after):}, consumed: {str((mem_after[0] - mem_before[0], mem_after[1])):}; exec time: {str(TOTAL_TIME)}")
 
-    print(RESULTS[0])
+    #print(RESULTS[0])
 
 # Test runtime: 761.02s
 

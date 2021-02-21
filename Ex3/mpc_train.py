@@ -1,5 +1,7 @@
 """mpc_train.py
 
+Example call to start training with 2 participants/processes (rank 0 always holds the model, while the additional parties split the data evenly) on the Fashion MNIST dataset using only 5000 of the 60000 samples and 2 epochs.
+
 python mpc_train.py --num_participants 2 --dataset fashion --samples 5000 --epochs 2
 """
 
@@ -440,7 +442,7 @@ if __name__ == "__main__":
     mem_after = RESULTS[0]["mem_after"]
     print(f"Memory usage: memory before: {str(mem_before):}, after: {str(mem_after):}, consumed: {str((mem_after[0] - mem_before[0], mem_after[1])):}; exec time: {str(TOTAL_TIME)}")
 
-    print(RESULTS[0])
+    #print(RESULTS[0])
 
 
 # results = {
