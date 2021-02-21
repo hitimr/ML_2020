@@ -6,30 +6,30 @@ from config import *
 
 #from models.mnist_binary_conf import * # load configuration file for model
 from models.fashion_relu_conf import *
-#from models.fashion_relu_conf import ReLUMLP as Net
 
-# choose the training and testing datasets
-train_data = datasets.FashionMNIST(root = "data", train = True, download = True, transform = transform)
-test_data = datasets.FashionMNIST(root = "data", train = False, download = True, transform = transform)
+def setup_data():
+    # choose the training and testing datasets
+    train_data = datasets.FashionMNIST(root = "data", train = True, download = True, transform = transform)
+    test_data = datasets.FashionMNIST(root = "data", train = False, download = True, transform = transform)
 
-assert sample_size >= 0  # Error: Invalid TRAIN_SIZE
-assert sample_size <= len(train_data) # Error: Invalid TRAIN_SIZE
+    assert sample_size >= 0  # Error: Invalid TRAIN_SIZE
+    assert sample_size <= len(train_data) # Error: Invalid TRAIN_SIZE
 
-# set number of subsamples 
-if sample_size == 0: num_train = len(train_data)
-else: num_train = sample_size
+    # set number of subsamples 
+    if sample_size == 0: num_train = len(train_data)
+    else: num_train = sample_size
 
-# obtain training indices that will be used for validation 
-indices = list(range(num_train))
-np.random.shuffle(indices)
-split = int(np.floor(valid_size * num_train))
-train_index, valid_index = indices[split:], indices[:split]
+    # obtain training indices that will be used for validation 
+    indices = list(range(num_train))
+    np.random.shuffle(indices)
+    split = int(np.floor(valid_size * num_train))
+    train_index, valid_index = indices[split:], indices[:split]
 
-# define samplers for obtaining training and validation batches
-train_sampler = SubsetRandomSampler(train_index)
-valid_sampler = SubsetRandomSampler(valid_index)
+    # define samplers for obtaining training and validation batches
+    train_sampler = SubsetRandomSampler(train_index)
+    valid_sampler = SubsetRandomSampler(valid_index)
 
-# prepare data loaders
-train_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, sampler = train_sampler, num_workers = num_workers)
-valid_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, sampler = valid_sampler, num_workers = num_workers)
-test_loader =  torch.utils.data.DataLoader(test_data,  batch_size = batch_size, num_workers = num_workers)
+    # prepare data loaders
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, sampler = train_sampler, num_workers = num_workers)
+    valid_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, sampler = valid_sampler, num_workers = num_workers)
+    test_loader =  torch.utils.data.DataLoader(test_data,  batch_size = batch_size, num_workers = num_workers)

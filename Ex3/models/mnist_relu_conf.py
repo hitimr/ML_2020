@@ -103,11 +103,10 @@ class ReLUMLP(nn.Module):
     def forward(self, x):   
         return forward(self, x) # defined in loaded conf file
 
-
 #
 # --- Data
 # Loader
-sample_size = int(SIZE_TRAIN*0.05)  # Number of images from the train set that are actually used for training. (0 = use all)
+sample_size = 0 #int(SIZE_TRAIN*0.05)  # Number of images from the train set that are actually used for training. (0 = use all)
 batch_size = 20  # how many samples per batch to load
 valid_size = 0.2 # percentage of training set to use as validation
 num_workers = 0 # number of subprocesses to use for data 

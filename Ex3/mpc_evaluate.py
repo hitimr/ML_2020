@@ -54,21 +54,47 @@ parser.add_argument('--dataset',
                     default='mnist',
                     metavar='D',
                     help='dataset to train on (default: mnist)')
+parser.add_argument('--epochs',
+                    type=int,
+                    default=5,
+                    metavar='E',
+                    help='Number of epochs to train for (default: 5)')
+parser.add_argument('--samples',
+                    type=int,
+                    default=0,
+                    metavar='S',
+                    help='Number of samples to use for evaluation (default: 0 = all), range = [0, 60000]')
 
 cl_args = parser.parse_args()
+
+epochs_input = cl_args.epochs
+samples_input = cl_args.samples
 
 dataset_input = cl_args.dataset
 if dataset_input=="mnist":
     print("Evaluating with MNIST dataset")
-    from models.mnist_relu_conf import ReLUMLP as Net
     from models.mnist_relu_conf import *
-    from mpc.setup_mnist import *
+    from models.mnist_relu_conf import ReLUMLP as Net
+
+    sample_size = samples_input
+    n_epochs = epochs_input
+
+    from mpc.setup_mnist import setup_data
+    setup_data()
+    print(model_file_name)
+
 elif dataset_input=="fashion":
     print("Evaluating with FASHION dataset")
+    from models.fashion_relu_conf import *
     from models.fashion_relu_conf import ReLUMLP as Net
-    # from models.fashion_relu_conf import *
-    from mpc.setup_fashion import *
+
+    sample_size = samples_input
+    n_epochs = epochs_input
+
+    from mpc.setup_fashion import setup_data
+    setup_data()
     print(model_file_name)
+
 else:
     raise ValueError("Invalid dataset choice!")
 

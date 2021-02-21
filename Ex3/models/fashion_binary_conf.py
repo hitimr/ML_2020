@@ -83,18 +83,27 @@ def forward(self, x):
         x = self.fc5(x)
         return x
     """
-        # flatten input     
-        x = x.view(-1, PIXEL_CNT)
-        x = self.fc1(x)
-        x = x.sign()
-        x = self.fc2(x)
-        x = x.sign()
-        x = self.fc3(x)
-        x = x.sign()
-        x = self.fc4(x)
-        x = x.sign()
-        x = self.fc5(x)
-        return x
+    # flatten input     
+    x = x.view(-1, PIXEL_CNT)
+    x = self.fc1(x)
+    x = x.sign()
+    x = self.fc2(x)
+    x = x.sign()
+    x = self.fc3(x)
+    x = x.sign()
+    x = self.fc4(x)
+    x = x.sign()
+    x = self.fc5(x)
+    return x
+
+class ReLUMLP(nn.Module):
+    def __init__(self):
+        super(ReLUMLP, self).__init__()    
+        layers(self) # defined in the loaded conf file
+
+    def forward(self, x):   
+        return forward(self, x) # defined in loaded conf file
+
 
 #
 # --- Data
