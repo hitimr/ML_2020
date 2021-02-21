@@ -1,0 +1,11 @@
+numpy==1.20.0
+pandas
+matplotlib
+seaborn
+jupyterlab
+mpyc==0.7
+crypten==0.1
+torch==1.4.0
+tqdm
+psutil
+ipywidgets

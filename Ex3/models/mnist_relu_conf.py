@@ -129,6 +129,6 @@ transform = blackwhite_transform
 #
 # --- Training
 #
-n_epochs = 2 # number of epochs to train the model
+n_epochs = 5 # number of epochs to train the model
 learning_rate = 0.001
 

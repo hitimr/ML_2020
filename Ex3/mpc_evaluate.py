@@ -14,7 +14,7 @@ import crypten
 import crypten.communicator as comm  # the communicator is similar to the MPI communicator for example
 # Check wether the correct python version is installed and init crypten
 assert sys.version_info[0] == 3 and sys.version_info[
-    1] == 7, "python 3.7 is required!"
+    1] >= 7, "python >3.7 is required!"
 print(f"Okay, good! You have: {sys.version_info[:3]}")
 # Now we can init crypten!
 crypten.init()

@@ -62,8 +62,30 @@ def profile(func):
         result = func(*args, **kwargs)
         elapsed_time = elapsed_since(start)
         mem_after = _get_process_memory()
-        print(f"{func.__name__}: memory before: {get_mbyte(mem_before):.2f}MB, after: {get_mbyte(mem_after):.2f}MB, consumed: {get_mbyte(mem_after - mem_before):.2f}MB; exec time: {elapsed_time}")
+        print(f"{func.__name__}: memory before: {get_mbyte(mem_before):.2f}MB, after: {get_mbyte(mem_after):.2f}MB, consumed: {get_mbyte(mem_after - mem_before):.2f}MB; exec time: {elapsed_time:.6f}")
         return result
+    return wrapper
+
+def profile_tensor(func):
+    def wrapper(iters=1, *args, **kwargs):
+        mem_before = _get_process_memory()
+        start = time()
+        for i in range(iters):
+            result = func(*args, **kwargs)
+        elapsed_time = time() - start #elapsed_since(start)
+        mem_after = _get_process_memory()
+        profile = {
+            "before": get_mbyte(mem_before),
+            "after": get_mbyte(mem_after),
+            "consumed": get_mbyte(mem_after - mem_before),
+            "time": elapsed_time / iters,
+            "total_time": elapsed_time
+        }
+        
+        print(f"{func.__name__}: memory before: {get_mbyte(mem_before):.2f}MB, after: {get_mbyte(mem_after):.2f}MB, consumed: {get_mbyte(mem_after - mem_before):.2f}MB; exec time: {elapsed_time:.6f}")
+        
+        
+        return result, profile
     return wrapper
 
 @profile

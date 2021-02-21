@@ -12,6 +12,9 @@ kernel.json
 # I would like to not sync the datasets for Ex3
 Ex3/**/data/*
 data
+Ex3/docs/code 
+Ex3/docs/figs
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

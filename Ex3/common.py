@@ -27,7 +27,7 @@ def plot_batch(images, labels, predictions=None, label_color="black"):
         - labels
         - predictions [optional]
         - label_color [optional]... color for labels above image
-    """
+    """ 
     images = images.numpy()
     fig = plt.figure(figsize=(25, 4))
     for idx in np.arange(20):
