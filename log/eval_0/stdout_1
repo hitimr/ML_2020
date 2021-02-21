@@ -1,0 +1,18 @@
+Rank: 1
+World_Size: 2
+
+Test runtime: 483.27s
+Test Loss: 1.20813e+11
+
+Test Accuracy of     0:   0% (   1 /  980 )
+Test Accuracy of     1:  99% (1127 / 1135 )
+Test Accuracy of     2:   0% (   0 / 1032 )
+Test Accuracy of     3:   0% (   0 / 1010 )
+Test Accuracy of     4:   0% (   0 /  982 )
+Test Accuracy of     5:   0% (   0 /  892 )
+Test Accuracy of     6:   0% (   0 /  958 )
+Test Accuracy of     7:   0% (   0 / 1028 )
+Test Accuracy of     8:   0% (   0 /  974 )
+Test Accuracy of     9:   0% (   0 / 1009 )
+
+Test Accuracy (Overall):  11% ( 1128 / 10000 )
