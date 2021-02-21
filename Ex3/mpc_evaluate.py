@@ -1,8 +1,8 @@
-"""evaluate a model via MPC
+"""Evaluate a model via MPC
 
-Example call to start with 6 participants/processes and pipe output into log file.
+Example call to start with 2 participants/processes (rank 0 always holds the model, while the additional parties split the data evenly).
 
-python mpc_evaluate.py --num_participants 2 --dataset fashion
+python mpc_evaluate.py --num_participants 2 --dataset fashion 
 """
 
 import argparse
@@ -54,21 +54,14 @@ parser.add_argument('--dataset',
                     default='mnist',
                     metavar='D',
                     help='dataset to train on (default: mnist)')
-parser.add_argument('--epochs',
-                    type=int,
-                    default=5,
-                    metavar='E',
-                    help='Number of epochs to train for (default: 5)')
-parser.add_argument('--samples',
-                    type=int,
-                    default=0,
-                    metavar='S',
-                    help='Number of samples to use for evaluation (default: 0 = all), range = [0, 60000]')
+# parser.add_argument('--samples',
+#                     type=int,
+#                     default=0,
+#                     metavar='S',
+#                     help='Number of samples to use for evaluation (default: 0 = all), range = [0, 10000]')
 
 cl_args = parser.parse_args()
 
-epochs_input = cl_args.epochs
-samples_input = cl_args.samples
 
 dataset_input = cl_args.dataset
 if dataset_input=="mnist":
@@ -76,11 +69,9 @@ if dataset_input=="mnist":
     from models.mnist_relu_conf import *
     from models.mnist_relu_conf import ReLUMLP as Net
 
-    sample_size = samples_input
-    n_epochs = epochs_input
 
     from mpc.setup_mnist import setup_data
-    setup_data()
+    train_loader, valid_loader, test_loader = setup_data(sample_size, valid_size, batch_size, num_workers)
     print(model_file_name)
 
 elif dataset_input=="fashion":
@@ -88,11 +79,10 @@ elif dataset_input=="fashion":
     from models.fashion_relu_conf import *
     from models.fashion_relu_conf import ReLUMLP as Net
 
-    sample_size = samples_input
-    n_epochs = epochs_input
+    # sample_size = samples_input
 
     from mpc.setup_fashion import setup_data
-    setup_data()
+    ttrain_loader, valid_loader, test_loader = setup_data(sample_size, valid_size, batch_size, num_workers)
     print(model_file_name)
 
 else:

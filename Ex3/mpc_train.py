@@ -1,8 +1,6 @@
 """mpc_train.py
 
-python mpc_train.py --num_participants 2 --model_file ./models/mpc_mnist_relu_ts0.5perc.pt 
-
-python mpc_train.py --num_participants 2 --dataset fashion
+python mpc_train.py --num_participants 2 --dataset fashion --samples 5000 --epochs 2
 """
 
 import argparse
@@ -33,7 +31,7 @@ from mpc.mpc_profile import *
 import warnings
 warnings.filterwarnings("ignore")
 
-parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
+parser = argparse.ArgumentParser(description='MPC Training script utilizing CrypTen.')
 parser.add_argument('--num_participants',
                     type=int,
                     default=2,
@@ -44,11 +42,6 @@ parser.add_argument('--criterion',
                     default='mse',
                     metavar='C',
                     help='input loss criterion to use (default: mse)')
-parser.add_argument('--model_file',
-                    type=str,
-                    default='',
-                    metavar='M',
-                    help='file to save model (default: None)')
 parser.add_argument('--dataset',
                     type=str,
                     default='mnist',
@@ -63,7 +56,12 @@ parser.add_argument('--samples',
                     type=int,
                     default=0,
                     metavar='S',
-                    help='Number of samples to use for training (default: 0 = all), range = [0, 60000]')
+                    help='Number of samples to use for training (default: 0 = all), range = [0] or [5000, 60000]')
+parser.add_argument('--model_file',
+                    type=str,
+                    default='',
+                    metavar='M',
+                    help='file to save model (default: None)')
 cl_args = parser.parse_args()
 
 epochs_input = cl_args.epochs
@@ -79,7 +77,8 @@ if dataset_input=="mnist":
     n_epochs = epochs_input
 
     from mpc.setup_mnist import setup_data
-    setup_data()
+
+    train_loader, valid_loader, test_loader = setup_data(sample_size, valid_size, batch_size, num_workers)
     print(model_file_name)
 
 elif dataset_input=="fashion":
@@ -91,7 +90,7 @@ elif dataset_input=="fashion":
     n_epochs = epochs_input
 
     from mpc.setup_fashion import setup_data
-    setup_data()
+    train_loader, valid_loader, test_loader = setup_data(sample_size, valid_size, batch_size, num_workers)
     print(model_file_name)
 
 else:

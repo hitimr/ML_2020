@@ -5,9 +5,11 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from config import *
 
 #from models.mnist_binary_conf import * # load configuration file for model
-from models.fashion_relu_conf import *
+#from models.fashion_relu_conf import *
 
-def setup_data():
+from models.mnist_relu_conf import transform
+
+def setup_data(sample_size, valid_size, batch_size, num_workers):
     # choose the training and testing datasets
     train_data = datasets.FashionMNIST(root = "data", train = True, download = True, transform = transform)
     test_data = datasets.FashionMNIST(root = "data", train = False, download = True, transform = transform)
@@ -33,3 +35,5 @@ def setup_data():
     train_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, sampler = train_sampler, num_workers = num_workers)
     valid_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, sampler = valid_sampler, num_workers = num_workers)
     test_loader =  torch.utils.data.DataLoader(test_data,  batch_size = batch_size, num_workers = num_workers)
+
+    return train_loader, valid_loader, test_loader

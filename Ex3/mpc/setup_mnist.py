@@ -6,9 +6,9 @@ from config import *
 
 from common import plot_batch
 
-from models.mnist_relu_conf import *
+from models.mnist_relu_conf import transform
 
-def setup_data():
+def setup_data(sample_size, valid_size, batch_size, num_workers):
     # choose the training and testing datasets
     train_data = datasets.MNIST(root = "data", train = True, download = True, transform = transform)
     test_data = datasets.MNIST(root = "data", train = False, download = True, transform = transform)
@@ -30,7 +30,11 @@ def setup_data():
     train_sampler = SubsetRandomSampler(train_index)
     valid_sampler = SubsetRandomSampler(valid_index)
 
+    print()
+
     # prepare data loaders
     train_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, sampler = train_sampler, num_workers = num_workers)
     valid_loader = torch.utils.data.DataLoader(train_data, batch_size = batch_size, sampler = valid_sampler, num_workers = num_workers)
     test_loader =  torch.utils.data.DataLoader(test_data,  batch_size = batch_size, num_workers = num_workers)
+
+    return train_loader, valid_loader, test_loader
